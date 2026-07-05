@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Now Captures — Screenshot evidence to Word &amp; PDF</title>
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34"><path d="M3 9V4h5M26 4h5v5M31 25v5h-5M8 30H3v-5" stroke="%2314213d" stroke-width="2.6" stroke-linecap="round" fill="none"/><circle cx="17" cy="17" r="6.8" fill="%23e07a2f"/><circle cx="17" cy="17" r="2.4" fill="%23fff"/></svg>'>
+<!-- libraries: try cdnjs, then jsdelivr, then unpkg. The export buttons check
+     window.docx / window.PDFLib before running and tell you which one is missing. -->
+<script>
+  (function(){
+    const libs=[
+      { name:"docx",      win:"docx",     urls:[
+        "https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/index.umd.js",
+        "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js",
+        "https://unpkg.com/docx@8.5.0/build/index.umd.js"
+      ]},
+      { name:"FileSaver", win:"saveAs",   urls:[
+        "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js",
+        "https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js",
+        "https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"
+      ]},
+      { name:"pdf-lib",   win:"PDFLib",   urls:[
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js",
+        "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js",
+        "https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"
+      ]}
+    ];
+    window.__libsStatus={ pending:libs.map(l=>l.name), failed:[] };
+    function loadOne(lib){
+      return new Promise(res=>{
+        let i=0;
+        const tryNext=()=>{
+          if(i>=lib.urls.length){ window.__libsStatus.failed.push(lib.name); res(false); return; }
+          const s=document.createElement("script");
+          s.src=lib.urls[i++]; s.async=false;
+          s.onload=()=>{ if(window[lib.win]) res(true); else tryNext(); };
+          s.onerror=tryNext;
+          document.head.appendChild(s);
+        };
+        tryNext();
+      });
+    }
+    window.__libsReady = Promise.all(libs.map(loadOne)).then(()=>{
+      window.__libsStatus.pending=[];
+      if(window.__libsStatus.failed.length===0) try{ console.log("[libs] all loaded"); }catch(_){}
+      else try{ console.warn("[libs] failed:", window.__libsStatus.failed); }catch(_){}
+    });
+  })();
+</script>
+<style>
+  :root{
+    --ink:#14213d; --paper:#f7f5f0; --line:#d8d3c7; --accent:#e07a2f; --accent-soft:#fbe9d8;
+    --ok:#2f7d4f; --fail:#c0392b; --blocked:#b8860b; --muted:#6b6557;
+    --shadow:0 1px 2px rgba(20,33,61,.06),0 8px 24px rgba(20,33,61,.08);
+    --mono:'SFMono-Regular',ui-monospace,'Cascadia Code','Roboto Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  header{
+    border-bottom:1px solid var(--line);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;background:rgba(247,245,240,.85);backdrop-filter:saturate(140%) blur(8px);position:sticky;top:0;z-index:50;
+  }
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand .logo-mark{flex:none;display:block}
+  .brand .logo-mark .frame{stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;fill:none}
+  .brand .logo-mark .ring{fill:var(--accent)}
+  .brand .logo-mark .dot{fill:#fff}
+  .brand .logo-text{display:flex;align-items:baseline;gap:2px;font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1;font-family:var(--sans)}
+  .brand .logo-now{color:var(--accent)}
+  .brand .logo-cap{color:var(--ink)}
+  .brand .ver{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.04em;margin-left:4px}
+  .doc-title-wrap{display:flex;align-items:center;gap:8px;flex:1;min-width:200px;max-width:380px}
+  .doc-title-wrap label{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+  #docTitle{flex:1;border:none;background:transparent;border-bottom:1.5px dashed var(--line);font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink);padding:4px 2px}
+  #docTitle:focus{outline:none;border-bottom-color:var(--accent)}
+  .save-state{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .save-state .pip{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+  .save-state.saving .pip{background:var(--accent);animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.3}}
+
+  .btn{font-family:var(--sans);font-size:14px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 16px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:transform .08s,box-shadow .15s,background .15s;box-shadow:var(--shadow)}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn svg{width:16px;height:16px;flex:none}
+
+  main{max-width:1080px;margin:0 auto;padding:28px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);margin-bottom:16px}
+  .toolbar .grp{display:flex;gap:10px;flex-wrap:wrap}
+  .toolbar .spacer{flex:1}
+
+  .summary{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+  .stat{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:20px;padding:5px 13px;background:#fff;display:flex;align-items:center;gap:7px}
+  .stat .d{width:8px;height:8px;border-radius:50%}
+  .stat b{font-weight:700}
+  .stat.total{color:var(--muted)}
+  .d.pass{background:var(--ok)} .d.fail{background:var(--fail)} .d.blocked{background:var(--blocked)} .d.untested{background:var(--line)}
+
+  .hint{font-size:13px;color:var(--muted);margin:-6px 4px 20px;line-height:1.55}
+  .hint kbd{font-family:var(--mono);font-size:11px;background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--ink)}
+
+  .empty{border:1.5px dashed var(--line);border-radius:16px;padding:64px 28px;text-align:center;color:var(--muted);background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(216,211,199,.07) 12px,rgba(216,211,199,.07) 24px)}
+  .empty .big{font-size:17px;font-weight:600;color:var(--ink);margin-bottom:6px}
+  .empty svg{width:42px;height:42px;color:var(--line);margin-bottom:14px}
+
+  .shots{display:flex;flex-direction:column;gap:18px}
+  .card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:300px 1fr}
+  .card .thumb{position:relative;background:#11161f;display:flex;align-items:center;justify-content:center;min-height:180px}
+  .card .thumb img{width:100%;height:100%;object-fit:contain;max-height:260px;display:block}
+  .card .idx{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:12px;font-weight:600;background:var(--accent);color:#fff;border-radius:7px;padding:3px 9px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+  .card .thumb-actions{position:absolute;bottom:10px;right:10px;display:flex;gap:6px}
+  .thumb-btn{border:none;background:rgba(17,22,31,.78);color:#fff;border-radius:7px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;backdrop-filter:blur(4px)}
+  .thumb-btn:hover{background:var(--accent)}
+  .thumb-btn svg{width:13px;height:13px}
+  .card .body{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+  .card .body .step{border:none;border-bottom:1.5px dashed var(--line);background:transparent;font-family:var(--sans);font-size:15px;font-weight:650;color:var(--ink);padding:4px 2px}
+  .card .body .step:focus{outline:none;border-bottom-color:var(--accent)}
+  .card .body textarea{width:100%;min-height:84px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:var(--sans);font-size:14px;color:var(--ink);padding:10px 12px;line-height:1.55}
+  .card .body textarea:focus{outline:none;border-color:var(--accent);background:#fff}
+  .status-row{display:flex;gap:6px;align-items:center}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{border:none;background:#fff;color:var(--muted);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 13px;cursor:pointer;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:none}
+  .seg button.on[data-s="pass"]{background:var(--ok);color:#fff}
+  .seg button.on[data-s="fail"]{background:var(--fail);color:#fff}
+  .seg button.on[data-s="blocked"]{background:var(--blocked);color:#fff}
+  .seg button.on[data-s="untested"]{background:var(--muted);color:#fff}
+  .card .meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:auto}
+  .card .meta .ts{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .card .meta .spacer{flex:1}
+  .icon-btn{border:1px solid var(--line);background:#fff;border-radius:8px;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);transition:all .12s}
+  .icon-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .icon-btn.danger:hover{color:#fff;background:#c0392b;border-color:#c0392b}
+  .icon-btn:disabled{opacity:.3;cursor:not-allowed}
+  .icon-btn svg{width:16px;height:16px}
+
+  /* lightbox */
+  .lightbox{position:fixed;inset:0;background:rgba(17,22,31,.92);z-index:200;display:none;align-items:center;justify-content:center;padding:30px;cursor:zoom-out}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+
+  /* region cropper + annotation share .overlay */
+  .overlay{position:fixed;inset:0;background:#0c0f15;z-index:300;display:none;flex-direction:column}
+  .overlay.open{display:flex}
+  .overlay .stage{flex:1;position:relative;overflow:auto;display:flex;align-items:center;justify-content:center;padding:14px}
+  .overlay canvas{max-width:100%;max-height:100%;touch-action:none;box-shadow:0 10px 40px rgba(0,0,0,.5);background:#fff}
+  #cropCanvas{cursor:crosshair}
+  #annotCanvas{cursor:crosshair}
+  #annotCanvas.tool-select{cursor:default}
+  #annotCanvas.tool-select.hover-shape{cursor:move}
+  #annotCanvas.tool-select.dragging{cursor:grabbing}
+  .overlay .bar{padding:12px 18px;background:#11161f;color:#fff;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid #2a3140}
+  .overlay .bar .label{font-size:13px;color:#a9b0bd;flex:1;min-width:120px}
+  .overlay .bar .label b{color:#fff}
+  .tool-seg{display:inline-flex;border:1px solid #2a3140;border-radius:8px;overflow:hidden}
+  .tool-seg button{border:none;background:#1b2230;color:#a9b0bd;padding:8px 12px;cursor:pointer;border-right:1px solid #2a3140;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+  .tool-seg button:last-child{border-right:none}
+  .tool-seg button.on{background:var(--accent);color:#fff}
+  .tool-seg button svg{width:15px;height:15px}
+  .swatches{display:inline-flex;gap:6px}
+  .swatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+  .swatch.on{border-color:#fff;box-shadow:0 0 0 2px #11161f,0 0 0 4px rgba(255,255,255,.4)}
+
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:400;transition:transform .3s cubic-bezier(.2,.9,.3,1);max-width:90vw;text-align:center}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast.ok{background:var(--ok)} #toast.err{background:#c0392b}
+
+  /* test-case groups */
+  .case-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .group{margin-bottom:26px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+  .group-head{display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(0deg,rgba(224,122,47,.04),rgba(224,122,47,.04)),#fff;border-bottom:1px solid var(--line);cursor:pointer;flex-wrap:wrap}
+  .group-head .caret{transition:transform .15s;color:var(--muted);flex:none}
+  .group.collapsed .caret{transform:rotate(-90deg)}
+  .group.collapsed .group-body{display:none}
+  .group-head .case-name{border:none;background:transparent;font-family:var(--sans);font-size:16px;font-weight:700;color:var(--ink);flex:1;min-width:120px;padding:2px 0;border-bottom:1.5px dashed transparent}
+  .group-head .case-name:focus{outline:none;border-bottom-color:var(--accent)}
+  .group-head .ccount{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .group-head .mini{display:inline-flex;gap:5px}
+  .mini .chip{font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;border-radius:11px;padding:2px 8px;display:none}
+  .mini .chip.show{display:inline-block}
+  .chip.pass{background:var(--ok)} .chip.fail{background:var(--fail)} .chip.blocked{background:var(--blocked)} .chip.untested{background:var(--muted)}
+  .group-head .del-case{border:1px solid var(--line);background:#fff;border-radius:8px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted)}
+  .group-head .del-case:hover{color:#fff;background:#c0392b;border-color:#c0392b}
+  .group-head .del-case svg{width:15px;height:15px}
+  .group-head .case-include{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;cursor:pointer;user-select:none;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;height:30px}
+  .group-head .case-include input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;margin:0}
+  .group-head .case-include:hover{border-color:var(--accent)}
+  .group-head .case-include.on{color:var(--ink);background:#fff7ee;border-color:#f1c994}
+  .group.excluded{opacity:.55}
+  .group.excluded .group-head{background:repeating-linear-gradient(135deg,#faf7f2 0 12px,#f3eee4 12px 24px)}
+  .group.excluded .group-body{background:#fafafa}
+  .group-body{padding:16px;display:flex;flex-direction:column;gap:16px}
+  .case-select{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff;cursor:pointer;max-width:170px}
+  .case-select:focus{outline:none;border-color:var(--accent)}
+
+  @media(max-width:720px){.card{grid-template-columns:1fr}.card .thumb{max-height:220px}main{padding:18px}header{padding:14px 18px}}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .banner{display:none;align-items:flex-start;gap:10px;border:1px solid #e7c9a8;background:#fdf3e7;color:#7a4a18;border-radius:12px;padding:13px 16px;margin-bottom:18px;font-size:13.5px;line-height:1.5}
+  .banner.show{display:flex}
+  .banner svg{width:18px;height:18px;flex:none;margin-top:1px}
+  .banner b{color:#5a3410}
+  .banner code{font-family:var(--mono);font-size:12px;background:#f3e2cd;padding:1px 5px;border-radius:4px}
+
+  /* live capture button (recording state) */
+  .btn.live-on{background:#e02f2f;border-color:#e02f2f;color:#fff}
+  .btn.live-on:hover{background:#c92626}
+  .btn.live-on svg{color:#fff}
+
+  /* persistent screen-share status bar */
+  #shareStatus{display:none;align-items:center;gap:10px;border:1px solid #cfe6d6;background:#eef7f0;color:#235c3a;border-radius:12px;padding:9px 14px;margin:-6px 0 16px;font-size:13px;font-weight:500;flex-wrap:wrap}
+  #shareStatus.show{display:flex}
+  #shareStatus.show.resume{background:#fff4e6;border-color:#f1c994;color:#7a4a18}
+  #shareStatus .ss-dot{width:9px;height:9px;border-radius:50%;background:#e02f2f;animation:pulse 1.4s infinite;flex:none}
+  #shareStatus .ss-dot.stopped{background:#b8860b;animation:none}
+  #shareStatus .ss-sp{flex:1;min-width:8px}
+  #shareStatus .ss-btn{border:1px solid #b9d8c3;background:#fff;color:#235c3a;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:8px;cursor:pointer}
+  #shareStatus .ss-btn:hover{border-color:#235c3a}
+  #shareStatus .ss-btn.primary{background:#14213d;color:#fff;border-color:#14213d}
+  #shareStatus .ss-btn.primary:hover{background:#0a1429}
+  #shareStatus .ss-btn.stop:hover{background:#c0392b;border-color:#c0392b;color:#fff}
+
+  /* clip recording state */
+  .btn.rec-on{background:#e02f2f;border-color:#e02f2f;color:#fff;animation:recPulse 1.6s infinite}
+  .btn.rec-on:hover{background:#c92626}
+  .btn.rec-on svg{color:#fff}
+  @keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,47,47,.45)}50%{box-shadow:0 0 0 6px rgba(224,47,47,0)}}
+
+  /* status filter dropdown in toolbar */
+  .filter-wrap{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:6px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+  .filter-wrap select{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff;cursor:pointer;text-transform:none;letter-spacing:0}
+  .filter-wrap select:hover{border-color:var(--accent)}
+
+  /* OCR button on shot cards */
+  .ocr-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;color:var(--ink);font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.3px;padding:5px 9px;border-radius:7px;cursor:pointer;text-transform:uppercase}
+  .ocr-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .ocr-btn:disabled{opacity:.6;cursor:wait}
+  .ocr-btn svg{width:13px;height:13px}
+
+  /* OCR suggestion panel — appears below the description after Read text runs */
+  .ocr-sug{margin-top:8px;border:1px solid #f1c994;background:#fff7ee;border-radius:9px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:#5a3410}
+  .ocr-sug-head{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#7a4a18}
+  .ocr-sug-head svg{width:14px;height:14px}
+  .ocr-sug-head .sp{flex:1}
+  .ocr-sug-head .ocr-sug-x{border:none;background:transparent;color:#7a4a18;cursor:pointer;font-size:18px;line-height:1;padding:0 4px;border-radius:4px}
+  .ocr-sug-head .ocr-sug-x:hover{background:rgba(122,74,24,.12)}
+  .ocr-sug-text{font-family:var(--mono);font-size:12.5px;color:var(--ink);background:#fff;border:1px solid #e9d4b3;border-radius:7px;padding:8px 10px;white-space:pre-wrap;max-height:200px;overflow:auto;line-height:1.5}
+  .ocr-sug-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .ocr-sug-actions button{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:6px 11px;border-radius:7px;cursor:pointer;border:1px solid #e9c891;background:#fff;color:#5a3410}
+  .ocr-sug-actions button:hover{border-color:#7a4a18}
+  .ocr-sug-actions button.primary{background:#14213d;border-color:#14213d;color:#fff}
+  .ocr-sug-actions button.primary:hover{background:#0a1429}
+  .ocr-sug-actions button.copy{background:#fff;color:#235c3a;border-color:#b9d8c3}
+  .ocr-sug-actions button.copy:hover{border-color:#235c3a}
+
+  /* video clip indicator on shot cards */
+  .clip-tag{display:inline-flex;align-items:center;gap:5px;background:#14213d;color:#fff;font-size:11px;font-weight:700;letter-spacing:.4px;padding:3px 8px;border-radius:6px;margin-left:6px;text-transform:uppercase}
+  .clip-tag svg{width:11px;height:11px}
+
+  /* selection checkbox on each thumbnail */
+  .sel-check{position:absolute;top:8px;right:8px;width:24px;height:24px;background:rgba(255,255,255,.92);border:1.5px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:4;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .sel-check:hover{border-color:var(--accent);background:#fff}
+  .sel-check svg{width:15px;height:15px;color:var(--accent);opacity:0;transition:opacity .1s}
+  .sel-check.on{background:var(--accent);border-color:var(--accent)}
+  .sel-check.on svg{color:#fff;opacity:1}
+  .card.selected{outline:2px solid var(--accent);outline-offset:2px}
+  .card.selected .thumb{background:#fff7ee}
+
+  /* selection action bar (sticky above the gallery) */
+  #selBar{display:none;position:sticky;top:0;z-index:20;margin:-4px 0 14px;padding:10px 14px;background:var(--ink);color:#fff;border-radius:10px;box-shadow:0 4px 14px rgba(20,33,61,.28);align-items:center;gap:10px;flex-wrap:wrap}
+  #selBar.show{display:flex}
+  #selBar .count{font-weight:700;font-size:13px;background:var(--accent);padding:4px 10px;border-radius:12px;letter-spacing:.3px}
+  #selBar .spacer{flex:1;min-width:6px}
+  #selBar button{border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.3px;padding:7px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  #selBar button:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.5)}
+  #selBar button.primary{background:var(--accent);border-color:var(--accent)}
+  #selBar button.primary:hover{background:#d06a1f;border-color:#d06a1f}
+  #selBar button svg{width:14px;height:14px}
+
+  /* "Select all" toolbar button */
+  .btn.sel-toggle.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* copy/move modal */
+  #copyMoveModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(20,33,61,.5);align-items:center;justify-content:center;padding:20px}
+  #copyMoveModal.show{display:flex}
+  #copyMoveModal .box{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:min(520px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+  #copyMoveModal .head{padding:18px 22px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  #copyMoveModal .head h2{font-size:18px;color:var(--ink);font-weight:650;margin:0;letter-spacing:-.01em}
+  #copyMoveModal .head .close{margin-left:auto;border:none;background:transparent;color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:20px;line-height:1}
+  #copyMoveModal .head .close:hover{background:var(--paper);color:var(--ink)}
+  #copyMoveModal .mode{padding:14px 22px;border-bottom:1px solid var(--line);display:flex;gap:8px}
+  #copyMoveModal .mode button{flex:1;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:600;padding:10px;border-radius:9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .12s}
+  #copyMoveModal .mode button .sub{font-weight:400;font-size:11px;color:var(--muted);letter-spacing:0}
+  #copyMoveModal .mode button.on{border-color:var(--accent);background:#fff7ee;color:var(--accent)}
+  #copyMoveModal .mode button.on .sub{color:#a05819}
+  #copyMoveModal .body{padding:16px 22px;overflow-y:auto;flex:1}
+  #copyMoveModal .body .lbl{font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+  #copyMoveModal .case-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  #copyMoveModal .case-list label{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:#fff;transition:all .1s}
+  #copyMoveModal .case-list label:hover{border-color:var(--accent);background:#fff7ee}
+  #copyMoveModal .case-list label.on{border-color:var(--accent);background:#fff7ee}
+  #copyMoveModal .case-list input{accent-color:var(--accent);width:16px;height:16px;cursor:pointer;margin:0}
+  #copyMoveModal .case-list .name{flex:1;font-size:14px;color:var(--ink);font-weight:500}
+  #copyMoveModal .case-list .count{font-size:11px;color:var(--muted);background:var(--paper);padding:2px 8px;border-radius:10px}
+  #copyMoveModal .new-case{display:flex;gap:8px;align-items:center;padding-top:6px;border-top:1px dashed var(--line)}
+  #copyMoveModal .new-case input[type="text"]{flex:1;font-family:var(--sans);font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:8px}
+  #copyMoveModal .new-case input[type="text"]:focus{outline:none;border-color:var(--accent)}
+  #copyMoveModal .foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:var(--paper)}
+  #copyMoveModal .foot button{font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink)}
+  #copyMoveModal .foot button:hover{border-color:var(--ink)}
+  #copyMoveModal .foot button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  #copyMoveModal .foot button.primary:hover{background:#d06a1f;border-color:#d06a1f}
+  #copyMoveModal .foot button.primary:disabled{opacity:.55;cursor:not-allowed}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg class="logo-mark" width="34" height="34" viewBox="0 0 34 34" aria-label="Now Captures logo" role="img">
+      <path class="frame" d="M3 9V4h5M26 4h5v5M31 25v5h-5M8 30H3v-5"/>
+      <circle class="ring" cx="17" cy="17" r="6.5"/>
+      <circle class="dot" cx="17" cy="17" r="2.4"/>
+    </svg>
+    <span class="logo-text"><span class="logo-now">Now</span><span class="logo-cap">Captures</span></span>
+    <span class="ver">v3.0 · annotate v2</span>
+  </div>
+  <div class="doc-title-wrap"><label for="docTitle">Report</label><input id="docTitle" value="Test Evidence Report" spellcheck="false" /></div>
+  <div class="save-state" id="saveState"><span class="pip"></span><span id="saveText">Saved</span></div>
+</header>
+
+<main>
+  <div class="banner" id="captureBanner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+    <div id="captureBannerText"></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="grp">
+      <button class="btn accent" id="btnRegion" title="Capture a screen, then drag to crop a region">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/></svg>
+        Capture region
+      </button>
+      <button class="btn primary" id="btnFull" title="Capture the full selected screen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+        Capture full screen
+      </button>
+      <button class="btn" id="btnUpload" title="Add an existing image file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add image
+      </button>
+      <input type="file" id="fileInput" accept="image/*" multiple class="sr" />
+      <button class="btn" id="btnLive" title="Start a live session: pick a screen once, then snap many shots from a floating button while you navigate any app or monitor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+        Live capture
+      </button>
+      <button class="btn" id="btnClip" title="Record a short screen clip (max 30 seconds). Saved to disk as .webm; a still frame is added to your gallery.">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+        Record clip
+      </button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" id="btnReset" disabled title="Clear all screenshots and saved data">Reset</button>
+    <button class="btn sel-toggle" id="btnSelectAll" disabled title="Select every screenshot for batch copy/move to test cases">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Select all
+    </button>
+    <span class="filter-wrap" title="Limit which screenshots are included in the next Word/PDF export by status">
+      Include:
+      <select id="exportFilter">
+        <option value="all">All shots</option>
+        <option value="fail">Only Failed</option>
+        <option value="fail_blocked">Failed + Blocked</option>
+        <option value="pass">Only Passed</option>
+        <option value="untested">Only Untested</option>
+      </select>
+    </span>
+    <button class="btn" id="btnExportPdf" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      Export PDF
+    </button>
+    <button class="btn accent" id="btnExport" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>
+      Export Word (.docx)
+    </button>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="case-bar" id="caseBar" style="display:none">
+    <button class="btn" id="btnAddCase">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h10"/><path d="M19 15v6M16 18h6"/></svg>
+      Add test case
+    </button>
+    <span style="font-size:12px;color:var(--muted)">Assign each screenshot to a case using the dropdown on its card.</span>
+  </div>
+
+  <p class="hint">
+    <b>Capture region</b> / <b>Capture full screen</b> (or press <kbd>R</kbd> / <kbd>F</kbd> while this tab is focused), then pick a screen <b>once</b> — after that you can keep capturing as many shots as you want without re-sharing.
+    Hit <b>Annotate</b> to draw arrows and boxes, set a <b>Pass / Fail / Blocked</b> status, and group shots into <b>test cases</b>. Export to Word or PDF. Everything auto-saves on your device — nothing is uploaded.
+    <br><b>Live capture</b> keeps one screen pick open and gives you a floating <b>Capture</b> button you can drag onto any window or monitor — snap a shot at every step while you navigate the app, hands-free with auto-capture if you like. <i>(Floating window needs Chrome or Edge; works on http://localhost.)</i>
+  </p>
+
+  <div id="emptyState" class="empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 15-3.5-3.5L13 16"/></svg>
+    <div class="big">No screenshots yet</div>
+    <div>Capture your first one to start building the report.</div>
+  </div>
+
+  <div id="selBar" role="toolbar" aria-label="Selection actions">
+    <span class="count" id="selCount">0 selected</span>
+    <button data-sb="all" title="Select every screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Select all</button>
+    <button data-sb="none" title="Clear selection">Deselect</button>
+    <span class="spacer"></span>
+    <button class="primary" data-sb="copy" title="Copy the selected screenshots into one or more test cases (originals stay)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy to case…</button>
+    <button data-sb="move" title="Move the selected screenshots into a single test case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Move to case…</button>
+    <button data-sb="close" title="Close selection">✕</button>
+  </div>
+  <div id="shots" class="shots"></div>
+</main>
+
+<!-- region cropper -->
+<div class="overlay" id="cropper">
+  <div class="stage"><canvas id="cropCanvas"></canvas></div>
+  <div class="bar">
+    <span class="label" id="cropLabel">Drag to select a region. <b>Release</b> to capture.</span>
+    <button class="btn" id="cropCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- annotation editor -->
+<div class="overlay" id="annot">
+  <div class="stage"><canvas id="annotCanvas"></canvas></div>
+  <div class="bar">
+    <div class="tool-seg" id="annotTools">
+      <button data-t="select" title="Select — click a shape to move or delete it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 2-8 8-2z"/></svg>Select</button>
+      <button data-t="arrow" class="on" title="Arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M17 7H9M17 7v8"/></svg>Arrow</button>
+      <button data-t="line" title="Straight line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19 19 5"/></svg>Line</button>
+      <button data-t="rect" title="Rectangle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="1"/></svg>Box</button>
+      <button data-t="highlight" title="Highlighter — translucent fill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15 4 21l3-8 9-9a2.828 2.828 0 1 1 4 4l-8 8-3-1z"/></svg>Highlight</button>
+      <button data-t="pen" title="Freehand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7-3-3-7 7-1 4z"/><path d="M16 9l3-3"/></svg>Pen</button>
+    </div>
+    <div class="swatches" id="annotColors"></div>
+    <span class="label"></span>
+    <button class="btn" id="annotDelete" style="display:none;background:#c0392b;border-color:#c0392b;color:#fff" title="Delete selected shape (Del)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+      Delete shape
+    </button>
+    <button class="btn" id="annotUndo">Undo</button>
+    <button class="btn" id="annotClear">Clear</button>
+    <button class="btn" id="annotCancel">Cancel</button>
+    <button class="btn accent" id="annotSave">Save changes</button>
+  </div>
+</div>
+
+<!-- copy/move to test case modal -->
+<div id="copyMoveModal" role="dialog" aria-modal="true" aria-labelledby="cmTitle">
+  <div class="box">
+    <div class="head">
+      <h2 id="cmTitle">Copy screenshots to test cases</h2>
+      <button class="close" id="cmClose" title="Cancel">✕</button>
+    </div>
+    <div class="mode">
+      <button data-mode="copy" class="on"><b>Copy</b><span class="sub">Originals stay, copies go to selected cases</span></button>
+      <button data-mode="move"><b>Move</b><span class="sub">Screenshots move to one case</span></button>
+    </div>
+    <div class="body">
+      <div class="lbl" id="cmListLabel">Choose one or more test cases to copy into</div>
+      <div class="case-list" id="cmCaseList"></div>
+      <div class="new-case">
+        <input type="text" id="cmNewCase" placeholder="…or create a new test case (optional)" maxlength="80" />
+      </div>
+    </div>
+    <div class="foot">
+      <button id="cmCancel">Cancel</button>
+      <button class="primary" id="cmConfirm" disabled>Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox"><img id="lightboxImg" alt="" /></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  /* ====== state ====== */
+  const STATUSES = ["untested","pass","fail","blocked"];
+  const STATUS_LABEL = {untested:"Untested",pass:"Pass",fail:"Fail",blocked:"Blocked"};
+  const STATUS_HEX = {untested:"9A9486",pass:"2F7D4F",fail:"C0392B",blocked:"B8860B"};
+  let shots = [];   // {id,dataUrl,step,desc,status,ts,caseId}
+  let cases = [];   // {id,name,collapsed}
+  let uid = 0, caseUid = 0;
+  const $ = s => document.querySelector(s);
+  const shotsEl=$("#shots"), emptyEl=$("#emptyState"), exportBtn=$("#btnExport"), exportPdfBtn=$("#btnExportPdf"), resetBtn=$("#btnReset");
+
+  function newCase(name){ const c={id:++caseUid,name:name||`Test case ${cases.length+1}`,collapsed:false,excluded:false}; cases.push(c); return c; }
+  function caseName(id){ const c=cases.find(x=>x.id===id); return c?c.name:"Ungrouped"; }
+  // shots not assigned to an existing case fall into a synthetic "Ungrouped" bucket (caseId null)
+
+  /* ====== toast ====== */
+  let toastTimer;
+  function toast(msg,kind){ const t=$("#toast"); t.textContent=msg; t.className="show"+(kind?" "+kind:""); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.className=t.className.replace("show","").trim(),3200); }
+
+  /* ====== IndexedDB auto-save ====== */
+  const DB_NAME="testcapture", STORE="state", KEY="current";
+  let db=null, saveTimer=null, supportsDB=("indexedDB" in window);
+  function openDB(){
+    return new Promise((res)=>{
+      if(!supportsDB){ res(null); return; }
+      let req;
+      try{ req=indexedDB.open(DB_NAME,1); }catch(e){ supportsDB=false; res(null); return; }
+      req.onupgradeneeded=()=>{ req.result.createObjectStore(STORE); };
+      req.onsuccess=()=>res(req.result);
+      req.onerror=()=>{ supportsDB=false; res(null); };
+    });
+  }
+  function setSaveState(state){
+    const el=$("#saveState"), txt=$("#saveText");
+    if(!supportsDB){ el.classList.remove("saving"); txt.textContent="Save off (preview)"; return; }
+    if(state==="saving"){ el.classList.add("saving"); txt.textContent="Saving…"; }
+    else{ el.classList.remove("saving"); txt.textContent="Saved"; }
+  }
+  function scheduleSave(){ if(!supportsDB) return; setSaveState("saving"); clearTimeout(saveTimer); saveTimer=setTimeout(persist,600); }
+  async function persist(){
+    if(!db||!supportsDB) return;
+    try{
+      const payload={ title:$("#docTitle").value, uid, caseUid, shots, cases };
+      await new Promise((res,rej)=>{ const tx=db.transaction(STORE,"readwrite"); tx.objectStore(STORE).put(payload,KEY); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); });
+      setSaveState("saved");
+    }catch(e){ console.error(e); setSaveState("saved"); }
+  }
+  async function loadSaved(){
+    if(!db||!supportsDB) return;
+    try{
+      const data=await new Promise((res,rej)=>{ const tx=db.transaction(STORE,"readonly"); const r=tx.objectStore(STORE).get(KEY); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+      if(data && Array.isArray(data.shots)){
+        shots=data.shots.map(s=>({ ...s, ts:new Date(s.ts), status:s.status||"untested", caseId:s.caseId!=null?s.caseId:null }));
+        cases=Array.isArray(data.cases)?data.cases.map(c=>({...c,collapsed:!!c.collapsed,excluded:!!c.excluded})):[];
+        uid=data.uid||shots.reduce((m,s)=>Math.max(m,s.id),0);
+        caseUid=data.caseUid||cases.reduce((m,c)=>Math.max(m,c.id),0);
+        if(data.title) $("#docTitle").value=data.title;
+        if(shots.length) toast(`Restored ${shots.length} saved screenshot(s)`,"ok");
+      }
+    }catch(e){ console.error(e); }
+  }
+
+  /* ====== capture ====== */
+  function captureBlockedReason(){
+    // Returns a human reason string if screen capture can't work here, else null.
+    if(!window.isSecureContext && location.protocol!=="file:") return null; // http on a server: API may still be absent, handled below
+    if(location.protocol==="file:") return "file";          // opened by double-click → file:// blocks capture
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) return "unsupported";
+    if(!window.isSecureContext) return "insecure";
+    return null;
+  }
+  /* A single screen-share stream is kept alive and reused, so the browser only
+     prompts on the FIRST capture. Every later Capture region / full screen snaps
+     a frame from that same live stream — no re-prompt. Stop/switch via the bar.
+
+     Caveat: Chrome ends the track automatically in some cases (e.g. if you click
+     its own "Stop sharing" toolbar, or in rare cases when the captured surface
+     goes away). When that happens we surface a Resume button instead of silently
+     losing the share, so recovery is one click — not the full share picker. */
+  let shareStream=null, shareVideo=null, shareTrack=null;
+  let lastFrameCanvas=null;   // snapshot kept so we can survive a brief track-end
+  function logShare(msg){ try{ console.log("[capture]", msg); }catch(_){} }
+  function shareActive(){
+    const ok = !!(shareStream && shareTrack && shareTrack.readyState==="live" && shareVideo && shareVideo.videoWidth>0);
+    return ok;
+  }
+  async function getSharedVideo(){
+    const reason=captureBlockedReason();
+    if(reason==="file"){ toast("Screen capture is blocked when opening the file directly (file://). Run it via a local server or use 'Add image'.","err"); return null; }
+    if(reason==="insecure"){ toast("Screen capture needs a secure page (https or localhost). Use 'Add image' here.","err"); return null; }
+    if(reason==="unsupported" || !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){ toast("This browser/page doesn't allow screen capture. Use 'Add image' instead.","err"); return null; }
+    if(shareActive()){ logShare("reusing existing stream — no prompt"); return shareVideo; }
+    logShare("opening share picker (no live stream)");
+    let stream;
+    try{ stream=await navigator.mediaDevices.getDisplayMedia({ video:{frameRate:8}, audio:false, surfaceSwitching:"include", selfBrowserSurface:"exclude", monitorTypeSurfaces:"include" }); }
+    catch(e){
+      if(e&&e.name==="NotAllowedError"){ toast("Capture cancelled (or permission denied by the browser).","err"); return null; }
+      toast("Couldn't start capture: "+(e.message||e.name||"unknown error"),"err"); return null;
+    }
+    const track=stream.getVideoTracks()[0], video=document.createElement("video");
+    video.srcObject=stream; video.muted=true; video.setAttribute("playsinline","");
+    liveVideosHost().appendChild(video);
+    try{ await video.play(); }catch(_){}
+    await new Promise(r=>setTimeout(r,180));
+    if(!video.videoWidth||!video.videoHeight){ try{ stream.getTracks().forEach(t=>t.stop()); }catch(_){} video.remove(); toast("Capture returned an empty frame — try again.","err"); return null; }
+    shareStream=stream; shareVideo=video; shareTrack=track;
+    logShare("share started: "+(track.label||"unknown source"));
+    track.addEventListener("ended",()=>{
+      logShare("track ENDED by browser/user — share will need to be resumed");
+      // tear down internal refs but keep the bar in 'resume' state
+      try{ if(shareVideo){ shareVideo.srcObject=null; shareVideo.remove(); } }catch(_){}
+      shareStream=null; shareVideo=null; shareTrack=null;
+      updateShareUI();
+    });
+    updateShareUI();
+    toast("Screen shared — now capture as many shots as you want without re-sharing.","ok");
+    return video;
+  }
+  function stopSharing(){
+    if(shareStream){ try{ shareStream.getTracks().forEach(t=>t.stop()); }catch(_){} }
+    if(shareVideo){ shareVideo.srcObject=null; shareVideo.remove(); }
+    shareStream=shareVideo=shareTrack=null;
+    lastFrameCanvas=null;
+    logShare("share stopped by user (Stop sharing)");
+    updateShareUI();
+    toast("Screen sharing stopped.","");
+  }
+  async function changeScreen(){ stopSharing(); await getSharedVideo(); }
+  async function resumeShare(){ await getSharedVideo(); }
+  function shareStatusEl(){
+    let el=document.getElementById("shareStatus");
+    if(!el){
+      el=document.createElement("div"); el.id="shareStatus";
+      const tb=document.querySelector(".toolbar"); if(tb) tb.insertAdjacentElement("afterend", el); else document.querySelector("main").prepend(el);
+      el.addEventListener("click",e=>{ const b=e.target.closest("[data-ss]"); if(!b) return;
+        const a=b.dataset.ss;
+        if(a==="stop") stopSharing();
+        else if(a==="change") changeScreen();
+        else if(a==="resume") resumeShare();
+      });
+    }
+    return el;
+  }
+  function updateShareUI(){
+    const el=shareStatusEl();
+    if(shareActive()){
+      el.className="show";
+      el.innerHTML=`<span class="ss-dot"></span><span class="ss-text">Sharing your screen — captures won't ask again.</span><span class="ss-sp"></span><button class="ss-btn" data-ss="change">Change screen</button><button class="ss-btn stop" data-ss="stop">Stop sharing</button>`;
+    } else if(lastFrameCanvas){
+      // track ended but we had been sharing — offer one-click resume
+      el.className="show resume";
+      el.innerHTML=`<span class="ss-dot stopped"></span><span class="ss-text">Sharing was ended by the browser. Click <b>Resume</b> to keep capturing without re-picking the screen each time.</span><span class="ss-sp"></span><button class="ss-btn primary" data-ss="resume">Resume sharing</button>`;
+    } else {
+      el.className=""; el.innerHTML="";
+    }
+  }
+  async function grabFrame(){
+    if(cropper.classList.contains("open")||annot.classList.contains("open")){ return null; }
+    const video=await getSharedVideo();
+    if(!video) return null;
+    const w=video.videoWidth, h=video.videoHeight;
+    if(!w||!h){ toast("Capture returned an empty frame — try again.","err"); return null; }
+    const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
+    canvas.getContext("2d").drawImage(video,0,0,w,h);
+    lastFrameCanvas=canvas;   // remember in case Chrome ends the track right after
+    return {canvas,w,h};
+  }
+  async function captureFull(){ const f=await grabFrame(); if(!f) return; addShot(f.canvas.toDataURL("image/png")); toast("Full screen captured","ok"); }
+  async function captureRegion(){ const f=await grabFrame(); if(!f) return; openCropper(f.canvas,f.w,f.h); }
+
+  /* ====== live capture session (continuous · draggable · multi-monitor) ====== */
+  const liveBtn=$("#btnLive");
+  const hasDocPiP=("documentPictureInPicture" in window);
+  const liveBtnIdle = liveBtn ? liveBtn.innerHTML : "";
+  const liveBtnBusy = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="2"/></svg> Stop live capture`;
+  let sources=[];            // {id,stream,video,track,label}
+  let srcUid=0;
+  let activeSrc="all";       // a source id, or the string "all"
+  let pipWindow=null, panelEl=null, panelDoc=null;
+  let autoTimer=null, autoOn=false, autoSecs=3;
+  let liveCount=0;
+  let dragCleanup=null, dragState=null, mainCssInjected=false;
+
+  const PANEL_CSS=`
+  .cap-panel{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#14213d;background:#fff}
+  .cap-panel,.cap-panel *{box-sizing:border-box}
+  .cap-panel.inpage{position:fixed;width:268px;border:1px solid #d8d3c7;border-radius:14px;box-shadow:0 12px 44px rgba(20,33,61,.30);overflow:hidden;z-index:500}
+  .cap-panel.pip{width:100%;min-height:100vh;display:flex;flex-direction:column}
+  .cap-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#14213d;color:#fff;user-select:none}
+  .cap-rec{width:9px;height:9px;border-radius:50%;background:#e02f2f;animation:capPulse 1.4s infinite;flex:none}
+  @keyframes capPulse{0%{box-shadow:0 0 0 0 rgba(224,47,47,.55)}70%{box-shadow:0 0 0 7px rgba(224,47,47,0)}100%{box-shadow:0 0 0 0 rgba(224,47,47,0)}}
+  .cap-title{font-size:13px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cap-x{border:none;background:rgba(255,255,255,.16);color:#fff;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1;flex:none}
+  .cap-x:hover{background:#e02f2f}
+  .cap-body{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .cap-shot{border:none;background:#e07a2f;color:#fff;font-size:15px;font-weight:700;padding:13px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(224,122,47,.35);transition:transform .06s,background .2s}
+  .cap-shot:hover{background:#d06a1f}
+  .cap-shot:active{transform:scale(.97)}
+  .cap-shot.flash{animation:capFlash .35s}
+  @keyframes capFlash{0%{background:#2f7d4f}100%{background:#e07a2f}}
+  .cap-cam{font-size:17px}
+  .cap-count{font-family:'SFMono-Regular',ui-monospace,Menlo,monospace;font-size:12px;color:#6b6557;text-align:center}
+  .cap-count b{color:#14213d;font-size:14px}
+  .cap-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:#6b6557}
+  .cap-row>.lbl{font-weight:600}
+  .cap-sel{flex:1;min-width:120px;font-size:12px;font-weight:600;color:#14213d;border:1px solid #d8d3c7;border-radius:8px;padding:6px 8px;background:#fff;cursor:pointer}
+  .cap-mini{border:1px solid #d8d3c7;background:#fff;color:#14213d;font-size:12px;font-weight:600;padding:7px 10px;border-radius:8px;cursor:pointer}
+  .cap-mini:hover{border-color:#14213d}
+  .cap-auto{display:flex;align-items:center;gap:6px;font-size:12px;color:#6b6557;margin-left:auto}
+  .cap-secs{width:46px;border:1px solid #d8d3c7;border-radius:7px;padding:5px 6px;font-size:12px}
+  .cap-empty{font-size:12px;color:#6b6557;line-height:1.5;background:#faf7f2;border:1px dashed #d8d3c7;border-radius:10px;padding:10px}
+  .cap-tip{font-size:11px;color:#9a9486;line-height:1.5}`;
+
+  function liveActive(){ return sources.length>0 || !!panelEl; }
+
+  function snapVideo(video){
+    const w=video.videoWidth, h=video.videoHeight;
+    if(!w||!h) return null;
+    const c=document.createElement("canvas"); c.width=w; c.height=h;
+    c.getContext("2d").drawImage(video,0,0,w,h);
+    return c;
+  }
+  function liveVideosHost(){
+    let host=document.getElementById("liveVideos");
+    if(!host){ host=document.createElement("div"); host.id="liveVideos";
+      host.style.cssText="position:fixed;left:-99999px;top:0;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none"; document.body.appendChild(host); }
+    return host;
+  }
+
+  async function addSource(){
+    const reason=captureBlockedReason();
+    if(reason==="file"){ toast("Live capture is blocked on file:// — serve via a local server.","err"); return; }
+    if(reason==="insecure"){ toast("Live capture needs https or localhost.","err"); return; }
+    if(reason==="unsupported"||!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){ toast("This browser can't capture the screen.","err"); return; }
+    let stream;
+    try{
+      stream=await navigator.mediaDevices.getDisplayMedia({
+        video:{frameRate:8}, audio:false,
+        surfaceSwitching:"include", selfBrowserSurface:"exclude", monitorTypeSurfaces:"include"
+      });
+    }catch(e){
+      if(e&&e.name==="NotAllowedError") toast("Screen pick cancelled.","err");
+      else toast("Couldn't start capture: "+(e.message||e.name||"error"),"err");
+      return;
+    }
+    const track=stream.getVideoTracks()[0];
+    const video=document.createElement("video");
+    video.srcObject=stream; video.muted=true; video.setAttribute("playsinline","");
+    liveVideosHost().appendChild(video);
+    try{ await video.play(); }catch(_){}
+    await new Promise(r=>setTimeout(r,150));
+    const id=++srcUid;
+    let label=(track&&track.label)?track.label:("Source "+id);
+    if(label.length>24) label=label.slice(0,24)+"…";
+    const src={id,stream,video,track,label};
+    sources.push(src);
+    if(track) track.addEventListener("ended",()=>removeSource(id,true));
+    if(sources.length===1) activeSrc=id;
+    renderPanel();
+    toast("Capture source added: "+label,"ok");
+  }
+  function removeSource(id,fromEnd){
+    const i=sources.findIndex(s=>s.id===id); if(i<0) return;
+    const s=sources[i];
+    try{ s.stream.getTracks().forEach(t=>t.stop()); }catch(_){}
+    if(s.video){ s.video.srcObject=null; s.video.remove(); }
+    sources.splice(i,1);
+    if(activeSrc===id) activeSrc = sources.length ? sources[0].id : "all";
+    if(fromEnd) toast("A capture source stopped sharing.","");
+    renderPanel();   // keep panel open so the user can re-add a screen
+  }
+  function targetsForCapture(){
+    if(activeSrc==="all") return sources.slice();
+    const s=sources.find(x=>x.id===activeSrc); return s?[s]:sources.slice();
+  }
+  function doCapture(){
+    const targets=targetsForCapture();
+    if(!targets.length){ toast("Add a screen first (click \u201CAdd screen\u201D).","err"); return; }
+    let n=0;
+    targets.forEach(s=>{ const c=snapVideo(s.video); if(c){ addShot(c.toDataURL("image/png")); n++; } });
+    if(n){ liveCount+=n; flashCapture(); updateCount(); }
+    else toast("Nothing captured yet — the source may still be starting.","err");
+  }
+  function setAuto(on){
+    autoOn=on;
+    if(autoTimer){ clearInterval(autoTimer); autoTimer=null; }
+    if(on) autoTimer=setInterval(doCapture, Math.max(1,autoSecs)*1000);
+  }
+
+  /* panel UI — shared by the floating PiP window and the in-page fallback */
+  function panelInnerHTML(){
+    const opts=sources.map(s=>`<option value="${s.id}" ${String(activeSrc)===String(s.id)?"selected":""}>${escHtml(s.label)}</option>`).join("");
+    const allOpt=`<option value="all" ${activeSrc==="all"?"selected":""}>All sources (${sources.length})</option>`;
+    return `
+    <div class="cap-head" data-drag>
+      <span class="cap-rec"></span>
+      <span class="cap-title">Live Capture</span>
+      <button class="cap-x" data-act="stop" title="End live capture">\u2715</button>
+    </div>
+    <div class="cap-body">
+      <button class="cap-shot" data-act="snap"><span class="cap-cam">\uD83D\uDCF8</span> Capture</button>
+      <div class="cap-count"><b id="capN">${liveCount}</b> captured this session</div>
+      ${sources.length>1?`<div class="cap-row"><span class="lbl">Target</span><select class="cap-sel" data-sel>${opts}${allOpt}</select></div>`:``}
+      <div class="cap-row">
+        <button class="cap-mini" data-act="add">\uFF0B Add screen</button>
+        <label class="cap-auto"><input type="checkbox" data-auto ${autoOn?"checked":""}/> Auto every <input type="number" class="cap-secs" data-secs min="1" max="120" value="${autoSecs}"/> s</label>
+      </div>
+      ${sources.length?`<div class="cap-tip">Drag this window over the app you're testing and click Capture at each step. Add another screen for a second monitor.</div>`
+                      :`<div class="cap-empty">No screen selected yet — click <b>\uFF0B Add screen</b> and choose the window or monitor you want to document.</div>`}
+    </div>`;
+  }
+  function renderPanel(){ if(!panelEl) return; panelEl.innerHTML=panelInnerHTML(); wirePanel(); }
+  function flashCapture(){ if(!panelEl) return; const b=panelEl.querySelector(".cap-shot"); if(b){ b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash"); } }
+  function updateCount(){ if(!panelEl) return; const n=panelEl.querySelector("#capN"); if(n) n.textContent=liveCount; }
+  function wirePanel(){
+    panelEl.querySelectorAll("[data-act]").forEach(b=>b.addEventListener("click",()=>{
+      const a=b.dataset.act;
+      if(a==="snap") doCapture();
+      else if(a==="add") addSource();
+      else if(a==="stop") stopLive();
+    }));
+    const selEl=panelEl.querySelector("[data-sel]"); if(selEl) selEl.addEventListener("change",e=>{ activeSrc=e.target.value; });
+    const autoEl=panelEl.querySelector("[data-auto]"); if(autoEl) autoEl.addEventListener("change",e=>setAuto(e.target.checked));
+    const secsEl=panelEl.querySelector("[data-secs]"); if(secsEl) secsEl.addEventListener("input",e=>{ autoSecs=Math.max(1,Math.min(120,parseInt(e.target.value,10)||3)); if(autoOn) setAuto(true); });
+    if(panelDoc===document) enableDragHandle();
+  }
+  function enableDragHandle(){
+    if(panelDoc!==document||!panelEl) return;
+    const head=panelEl.querySelector("[data-drag]"); if(!head) return;
+    head.style.cursor="grab";
+    head.addEventListener("mousedown",e=>{
+      if(e.target.closest("[data-act='stop']")) return;
+      e.preventDefault();
+      const r=panelEl.getBoundingClientRect();
+      dragState={dx:e.clientX-r.left, dy:e.clientY-r.top};
+      head.style.cursor="grabbing";
+    });
+  }
+  function installDragDoc(){
+    if(dragCleanup) return;
+    const mm=e=>{ if(!dragState||!panelEl) return;
+      let x=e.clientX-dragState.dx, y=e.clientY-dragState.dy;
+      x=Math.max(4,Math.min(window.innerWidth-panelEl.offsetWidth-4,x));
+      y=Math.max(4,Math.min(window.innerHeight-panelEl.offsetHeight-4,y));
+      panelEl.style.left=x+"px"; panelEl.style.top=y+"px"; panelEl.style.right="auto"; panelEl.style.bottom="auto";
+    };
+    const mu=()=>{ if(!dragState) return; dragState=null; const h=panelEl&&panelEl.querySelector("[data-drag]"); if(h) h.style.cursor="grab"; };
+    document.addEventListener("mousemove",mm); document.addEventListener("mouseup",mu);
+    dragCleanup=()=>{ document.removeEventListener("mousemove",mm); document.removeEventListener("mouseup",mu); };
+  }
+  function injectMainPanelCSSOnce(){
+    if(mainCssInjected) return; mainCssInjected=true;
+    const st=document.createElement("style"); st.id="capPanelCss"; st.textContent=PANEL_CSS; document.head.appendChild(st);
+  }
+
+  async function startLive(){
+    if(liveActive()){ stopLive(); return; }
+    const reason=captureBlockedReason();
+    if(reason==="file"){ showCaptureBanner(); toast("Live capture needs a local server — file:// blocks screen capture.","err"); return; }
+    if(reason==="insecure"){ toast("Live capture needs https or localhost.","err"); return; }
+    if(reason==="unsupported"||!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){ toast("Screen capture isn't available here. Try Chrome or Edge over localhost.","err"); return; }
+
+    if(liveBtn){ liveBtn.classList.add("live-on"); liveBtn.innerHTML=liveBtnBusy; }
+
+    if(hasDocPiP){
+      try{ pipWindow=await window.documentPictureInPicture.requestWindow({width:300,height:252}); }
+      catch(_){ pipWindow=null; }
+    }
+    if(pipWindow){
+      panelDoc=pipWindow.document;
+      try{ pipWindow.document.title="Live Capture"; }catch(_){}
+      const st=panelDoc.createElement("style"); st.textContent=PANEL_CSS; panelDoc.head.appendChild(st);
+      panelDoc.body.style.margin="0"; panelDoc.body.style.background="#fff";
+      panelEl=panelDoc.createElement("div"); panelEl.className="cap-panel pip"; panelDoc.body.appendChild(panelEl);
+      pipWindow.addEventListener("pagehide",()=>{ pipWindow=null; stopLive(); });
+      renderPanel();
+      toast("Floating capture window opened — drag it onto any monitor, then add a screen.","ok");
+    } else {
+      panelDoc=document;
+      injectMainPanelCSSOnce();
+      panelEl=document.createElement("div"); panelEl.className="cap-panel inpage";
+      panelEl.style.right="20px"; panelEl.style.bottom="20px";
+      document.body.appendChild(panelEl);
+      installDragDoc();
+      renderPanel();
+      await addSource();   // no PiP gesture conflict on this path, so start the first source now
+    }
+  }
+  function stopLive(){
+    const wasActive=!!panelEl||sources.length>0;
+    if(autoTimer){ clearInterval(autoTimer); autoTimer=null; } autoOn=false;
+    sources.forEach(s=>{ try{ s.stream.getTracks().forEach(t=>t.stop()); }catch(_){} if(s.video){ s.video.srcObject=null; s.video.remove(); } });
+    sources=[]; activeSrc="all"; liveCount=0;
+    if(dragCleanup){ dragCleanup(); dragCleanup=null; } dragState=null;
+    if(pipWindow){ try{ pipWindow.close(); }catch(_){} pipWindow=null; }
+    if(panelEl && panelDoc===document && panelEl.parentNode) panelEl.remove();
+    panelEl=null; panelDoc=null;
+    if(liveBtn){ liveBtn.classList.remove("live-on"); liveBtn.innerHTML=liveBtnIdle; }
+    if(wasActive) toast("Live capture ended","ok");
+  }
+  if(liveBtn) liveBtn.addEventListener("click",startLive);
+  document.addEventListener("keydown",e=>{
+    if(!liveActive()) return;
+    const tag=document.activeElement?document.activeElement.tagName:"";
+    if(/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+    if(annot.classList.contains("open")||cropper.classList.contains("open")) return;
+    if(e.key==="c"||e.key==="C"){ e.preventDefault(); doCapture(); }
+  });
+
+  /* ====== short clip recording (max 30s, saved to disk immediately) ====== */
+  const clipBtn=$("#btnClip");
+  const CLIP_MAX_S=30;
+  const clipBtnIdle = clipBtn ? clipBtn.innerHTML : "";
+  let mediaRec=null, clipChunks=[], clipStartedAt=0, clipTimerId=null, clipCountdownId=null, clipSource=null;
+  function clipRecording(){ return !!mediaRec && mediaRec.state==="recording"; }
+  function setClipBtnLabel(t,on){
+    if(!clipBtn) return;
+    if(on){ clipBtn.classList.add("rec-on"); clipBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> ${t}`; }
+    else { clipBtn.classList.remove("rec-on"); clipBtn.innerHTML=clipBtnIdle; }
+  }
+  async function toggleClip(){
+    if(clipRecording()){ stopClip("user"); return; }
+    if(typeof MediaRecorder==="undefined"){ toast("Your browser doesn't support MediaRecorder for clips.","err"); return; }
+    const video=await getSharedVideo();
+    if(!video) return;
+    clipSource=shareStream;
+    // pick a supported mime type
+    const candidates=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm","video/mp4"];
+    let mime=""; for(const m of candidates){ if(MediaRecorder.isTypeSupported(m)){ mime=m; break; } }
+    try{ mediaRec = mime ? new MediaRecorder(clipSource,{mimeType:mime,videoBitsPerSecond:2_500_000}) : new MediaRecorder(clipSource); }
+    catch(e){ toast("Couldn't start recorder: "+(e.message||e.name),"err"); return; }
+    clipChunks=[];
+    mediaRec.ondataavailable=ev=>{ if(ev.data && ev.data.size) clipChunks.push(ev.data); };
+    mediaRec.onstop=async()=>{ await finalizeClip(mime); };
+    mediaRec.onerror=ev=>{ console.error("[clip]",ev); toast("Recording error.","err"); stopClip("error"); };
+    try{ mediaRec.start(250); }
+    catch(e){ toast("Couldn't start recorder: "+(e.message||e.name),"err"); mediaRec=null; return; }
+    clipStartedAt=Date.now();
+    // countdown UI
+    let remaining=CLIP_MAX_S;
+    setClipBtnLabel(`Stop (${remaining}s)`, true);
+    clipCountdownId=setInterval(()=>{
+      remaining=Math.max(0, CLIP_MAX_S - Math.floor((Date.now()-clipStartedAt)/1000));
+      if(clipRecording()) setClipBtnLabel(`Stop (${remaining}s)`, true);
+    }, 250);
+    clipTimerId=setTimeout(()=>stopClip("auto"), CLIP_MAX_S*1000);
+    toast(`Recording clip\u2026 stops automatically at ${CLIP_MAX_S}s. Click again to stop early.`,"ok");
+  }
+  function stopClip(reason){
+    if(clipTimerId){ clearTimeout(clipTimerId); clipTimerId=null; }
+    if(clipCountdownId){ clearInterval(clipCountdownId); clipCountdownId=null; }
+    if(mediaRec && mediaRec.state!=="inactive"){ try{ mediaRec.stop(); }catch(_){} }
+  }
+  async function finalizeClip(mime){
+    setClipBtnLabel("", false);
+    const durSec=Math.max(1, Math.round((Date.now()-clipStartedAt)/1000));
+    const blob=new Blob(clipChunks,{type:mime||"video/webm"});
+    clipChunks=[];
+    const ext = (blob.type.indexOf("mp4")>=0) ? "mp4" : "webm";
+    const ts=new Date(); const pad=n=>String(n).padStart(2,"0");
+    const stamp=`${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}`;
+    const filename=`clip_${stamp}.${ext}`;
+    // download immediately (NOT stored in IndexedDB - keeps things small)
+    if(window.saveAs) saveAs(blob, filename);
+    else {
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    }
+    // also grab a still frame and add it as a shot, tagged with the clip filename
+    const stillFrame=snapVideo(shareVideo);
+    if(stillFrame){
+      const s=addShot(stillFrame.toDataURL("image/png"));
+      if(s){
+        s.desc = `Video clip recorded: ${filename}\nDuration: ${durSec}s\n(This image is the final frame of the clip. The full video downloads to your computer separately.)`;
+        s.clipFilename = filename;
+        s.clipDuration = durSec;
+        scheduleSave();
+        render();
+      }
+    }
+    toast(`Clip saved (${durSec}s) \u2014 see your Downloads. A still frame was added to the gallery.`,"ok");
+    mediaRec=null; clipSource=null;
+  }
+  if(clipBtn) clipBtn.addEventListener("click",toggleClip);
+
+  /* ====== status filter for export ====== */
+  const exportFilterEl=$("#exportFilter");
+  function filterShotsByStatus(items){
+    const v=exportFilterEl?exportFilterEl.value:"all";
+    if(v==="all") return items.slice();
+    if(v==="fail") return items.filter(s=>s.status==="fail");
+    if(v==="fail_blocked") return items.filter(s=>s.status==="fail"||s.status==="blocked");
+    if(v==="pass") return items.filter(s=>s.status==="pass");
+    if(v==="untested") return items.filter(s=>s.status==="untested");
+    return items.slice();
+  }
+  function filterLabel(){
+    const v=exportFilterEl?exportFilterEl.value:"all";
+    if(v==="fail") return "Only Failed";
+    if(v==="fail_blocked") return "Failed + Blocked";
+    if(v==="pass") return "Only Passed";
+    if(v==="untested") return "Only Untested";
+    return null;
+  }
+  function applyStatusFilterToGroups(groups){
+    return groups.map(g=>({...g, items:filterShotsByStatus(g.items)})).filter(g=>g.items.length>0);
+  }
+
+  /* ====== OCR (lazy-loaded Tesseract.js) ====== */
+  const OCR_URLS=[
+    "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
+    "https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js"
+  ];
+  let ocrLoading=null;
+  async function loadOCR(){
+    if(window.Tesseract) return window.Tesseract;
+    if(ocrLoading) return ocrLoading;
+    ocrLoading = new Promise(async(resolve,reject)=>{
+      let lastErr=null;
+      for(const url of OCR_URLS){
+        try{
+          await new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src=url; sc.async=true; sc.onload=()=>res(); sc.onerror=()=>rej(new Error("load failed: "+url)); document.head.appendChild(sc); });
+          if(window.Tesseract){ resolve(window.Tesseract); return; }
+        }catch(e){ lastErr=e; }
+      }
+      reject(lastErr||new Error("Tesseract.js failed to load from any CDN."));
+    });
+    return ocrLoading;
+  }
+  async function runOcrOnShot(shotId, btnEl){
+    const s=shots.find(x=>x.id===shotId); if(!s) return;
+    const restore=btnEl.innerHTML;
+    btnEl.disabled=true;
+    btnEl.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/></svg> Loading OCR\u2026`;
+    try{
+      const T=await loadOCR();
+      btnEl.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/></svg> Reading\u2026 0%`;
+      const result=await T.recognize(s.dataUrl,"eng",{ logger:m=>{
+        if(m && m.status==="recognizing text" && typeof m.progress==="number"){
+          btnEl.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/></svg> Reading\u2026 ${Math.round(m.progress*100)}%`;
+        }
+      }});
+      let text=(result && result.data && result.data.text || "").trim().replace(/\n{3,}/g,"\n\n");
+      if(!text){ toast("OCR didn't find any readable text in this image.","err"); return; }
+      // Store as a suggestion — the user reviews and chooses what to do with it.
+      s.ocrSuggestion = text;
+      render();
+      toast("Text suggestion ready below the description \u2014 review and choose what to keep.","ok");
+    }catch(err){
+      console.error("[ocr]",err);
+      toast("OCR failed: "+(err.message||err)+" (Network may be blocking the OCR library.)","err");
+    }finally{
+      btnEl.disabled=false; btnEl.innerHTML=restore;
+    }
+  }
+
+  function applyOcrSuggestion(shotId, mode){
+    const s=shots.find(x=>x.id===shotId); if(!s||!s.ocrSuggestion) return;
+    const sug=s.ocrSuggestion;
+    if(mode==="insert"){
+      s.desc = s.desc && s.desc.trim() ? (s.desc.replace(/\s+$/,"") + "\n\n" + sug) : sug;
+    } else if(mode==="replace"){
+      if(s.desc && s.desc.trim() && !confirm("Replace the current description with the OCR text?")) return;
+      s.desc = sug;
+    } else if(mode==="copy"){
+      try{ navigator.clipboard.writeText(sug); toast("Text copied to clipboard","ok"); }
+      catch(_){ toast("Couldn't access clipboard \u2014 select text manually","err"); }
+      return;
+    }
+    delete s.ocrSuggestion;
+    scheduleSave(); render();
+  }
+  function dismissOcrSuggestion(shotId){
+    const s=shots.find(x=>x.id===shotId); if(!s) return;
+    delete s.ocrSuggestion; render();
+  }
+
+  /* ====== cropper ====== */
+  const cropper=$("#cropper"), cropCanvas=$("#cropCanvas"), cropCtx=cropCanvas.getContext("2d"), cropLabel=$("#cropLabel");
+  let srcCanvas,scale=1,sel=null,dragging=false,startX=0,startY=0;
+  function openCropper(canvas,w,h){
+    srcCanvas=canvas; const maxW=window.innerWidth-28,maxH=window.innerHeight-120;
+    scale=Math.min(maxW/w,maxH/h,1); cropCanvas.width=Math.round(w*scale); cropCanvas.height=Math.round(h*scale);
+    sel=null; dragging=false; drawCrop(); cropper.classList.add("open"); cropLabel.innerHTML="Drag to select a region. <b>Release</b> to capture.";
+  }
+  function drawCrop(){
+    const ctx=cropCtx,W=cropCanvas.width,H=cropCanvas.height; ctx.clearRect(0,0,W,H); ctx.drawImage(srcCanvas,0,0,W,H);
+    ctx.fillStyle="rgba(12,15,21,.55)"; ctx.fillRect(0,0,W,H);
+    if(sel){ ctx.drawImage(srcCanvas,sel.x/scale,sel.y/scale,sel.w/scale,sel.h/scale,sel.x,sel.y,sel.w,sel.h); ctx.strokeStyle="#e07a2f"; ctx.lineWidth=2; ctx.strokeRect(sel.x+1,sel.y+1,sel.w-2,sel.h-2); }
+  }
+  function cropPos(e){ const r=cropCanvas.getBoundingClientRect(); const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left,cy=(e.touches?e.touches[0].clientY:e.clientY)-r.top; return {x:Math.max(0,Math.min(cropCanvas.width,cx)),y:Math.max(0,Math.min(cropCanvas.height,cy))}; }
+  function cStart(e){ e.preventDefault(); dragging=true; const p=cropPos(e); startX=p.x; startY=p.y; sel={x:p.x,y:p.y,w:0,h:0}; }
+  function cMove(e){ if(!dragging) return; e.preventDefault(); const p=cropPos(e); sel={x:Math.min(startX,p.x),y:Math.min(startY,p.y),w:Math.abs(p.x-startX),h:Math.abs(p.y-startY)}; drawCrop(); cropLabel.innerHTML=`Region <b>${Math.round(sel.w/scale)} × ${Math.round(sel.h/scale)}</b> px — release to capture.`; }
+  function cEnd(e){ if(!dragging) return; dragging=false; e.preventDefault();
+    if(!sel||sel.w<8||sel.h<8){ sel=null; drawCrop(); cropLabel.innerHTML="Selection too small. Drag a larger area."; return; }
+    const out=document.createElement("canvas"); out.width=Math.round(sel.w/scale); out.height=Math.round(sel.h/scale);
+    out.getContext("2d").drawImage(srcCanvas,sel.x/scale,sel.y/scale,sel.w/scale,sel.h/scale,0,0,out.width,out.height);
+    addShot(out.toDataURL("image/png")); closeCropper(); toast("Region captured","ok");
+  }
+  function closeCropper(){ cropper.classList.remove("open"); srcCanvas=null; sel=null; }
+  cropCanvas.addEventListener("mousedown",cStart); cropCanvas.addEventListener("mousemove",cMove); window.addEventListener("mouseup",cEnd);
+  cropCanvas.addEventListener("touchstart",cStart,{passive:false}); cropCanvas.addEventListener("touchmove",cMove,{passive:false}); cropCanvas.addEventListener("touchend",cEnd,{passive:false});
+  $("#cropCancel").addEventListener("click",closeCropper);
+
+  /* ====== annotation editor ====== */
+  const annot=$("#annot"), aCanvas=$("#annotCanvas"), aCtx=aCanvas.getContext("2d");
+  const COLORS=["#e02f2f","#e07a2f","#f1c40f","#2f7d4f","#2f6fe0","#9b2fe0","#11161f","#ffffff"];
+  let annotEditId=null, baseImg=null, aScale=1, shapes=[], curTool="arrow", curColor=COLORS[0];
+  let aDrawing=false, aStart=null, penPts=[];
+  let selectedIdx=-1;         // index into shapes[] of the currently selected shape (-1 = none)
+  let dragMode=null;          // "move" while dragging a selected shape
+  let dragStart=null, dragOrig=null;
+  let shapeUid=0;
+
+  const colorWrap=$("#annotColors");
+  COLORS.forEach((c,i)=>{ const sw=document.createElement("div"); sw.className="swatch"+(i===0?" on":""); sw.style.background=c; sw.dataset.c=c; colorWrap.appendChild(sw); });
+  colorWrap.addEventListener("click",e=>{
+    const sw=e.target.closest(".swatch"); if(!sw) return;
+    curColor=sw.dataset.c; [...colorWrap.children].forEach(x=>x.classList.toggle("on",x===sw));
+    // If a shape is selected and the user picks a color, recolor it
+    if(selectedIdx>=0 && shapes[selectedIdx]){ shapes[selectedIdx].color=curColor; redrawAnnot(); }
+  });
+  $("#annotTools").addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    curTool=b.dataset.t;
+    [...$("#annotTools").children].forEach(x=>x.classList.toggle("on",x===b));
+    // Switching tools clears selection unless we're in select mode
+    if(curTool!=="select"){ setSelected(-1); }
+    aCanvas.classList.toggle("tool-select", curTool==="select");
+  });
+
+  function openAnnot(id){
+    const s=shots.find(x=>x.id===id); if(!s) return;
+    annotEditId=id; shapes=[]; selectedIdx=-1;
+    const img=new Image();
+    img.onload=()=>{
+      baseImg=img;
+      const maxW=window.innerWidth-28,maxH=window.innerHeight-110;
+      aScale=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight,1);
+      aCanvas.width=Math.round(img.naturalWidth*aScale); aCanvas.height=Math.round(img.naturalHeight*aScale);
+      redrawAnnot(); annot.classList.add("open");
+      updateDeleteBtn();
+    };
+    img.src=s.dataUrl;
+  }
+  function closeAnnot(){ annot.classList.remove("open"); baseImg=null; annotEditId=null; shapes=[]; selectedIdx=-1; updateDeleteBtn(); }
+
+  function setSelected(idx){
+    selectedIdx=idx;
+    updateDeleteBtn();
+    redrawAnnot();
+  }
+  function updateDeleteBtn(){
+    const btn=$("#annotDelete"); if(!btn) return;
+    btn.style.display = (selectedIdx>=0 && shapes[selectedIdx]) ? "inline-flex" : "none";
+  }
+
+  function redrawAnnot(extra){
+    aCtx.clearRect(0,0,aCanvas.width,aCanvas.height);
+    aCtx.drawImage(baseImg,0,0,aCanvas.width,aCanvas.height);
+    const all=extra?shapes.concat([extra]):shapes;
+    // Draw highlights first (they sit under other marks visually)
+    all.forEach(sh=>{ if(sh.type==="highlight") drawShape(aCtx,sh,aCanvas.width); });
+    // Then the rest, preserving creation order
+    all.forEach(sh=>{ if(sh.type!=="highlight") drawShape(aCtx,sh,aCanvas.width); });
+    // Draw selection indicator on top
+    if(selectedIdx>=0 && shapes[selectedIdx]){
+      drawSelectionOutline(aCtx, shapes[selectedIdx]);
+    }
+  }
+
+  function drawShape(ctx,sh,canvasW){
+    ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle=sh.color; ctx.fillStyle=sh.color;
+    const lw=Math.max(2.5,canvasW*0.006); ctx.lineWidth=lw;
+    if(sh.type==="rect"){ ctx.strokeRect(sh.x,sh.y,sh.w,sh.h); }
+    else if(sh.type==="highlight"){
+      ctx.save();
+      ctx.globalAlpha=0.35;
+      ctx.fillRect(sh.x,sh.y,sh.w,sh.h);
+      ctx.restore();
+    }
+    else if(sh.type==="pen"){ ctx.beginPath(); sh.pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke(); }
+    else if(sh.type==="line"){
+      ctx.beginPath(); ctx.moveTo(sh.x1,sh.y1); ctx.lineTo(sh.x2,sh.y2); ctx.stroke();
+    }
+    else if(sh.type==="arrow"){
+      ctx.beginPath(); ctx.moveTo(sh.x1,sh.y1); ctx.lineTo(sh.x2,sh.y2); ctx.stroke();
+      const ang=Math.atan2(sh.y2-sh.y1,sh.x2-sh.x1), head=lw*3.2;
+      ctx.beginPath(); ctx.moveTo(sh.x2,sh.y2);
+      ctx.lineTo(sh.x2-head*Math.cos(ang-Math.PI/6),sh.y2-head*Math.sin(ang-Math.PI/6));
+      ctx.lineTo(sh.x2-head*Math.cos(ang+Math.PI/6),sh.y2-head*Math.sin(ang+Math.PI/6));
+      ctx.closePath(); ctx.fill();
+    }
+  }
+
+  // Bounding box of a shape (in canvas coordinates)
+  function shapeBounds(sh){
+    if(sh.type==="rect"||sh.type==="highlight"){
+      const x=Math.min(sh.x,sh.x+sh.w), y=Math.min(sh.y,sh.y+sh.h);
+      return {x,y,w:Math.abs(sh.w),h:Math.abs(sh.h)};
+    }
+    if(sh.type==="arrow"||sh.type==="line"){
+      const x=Math.min(sh.x1,sh.x2), y=Math.min(sh.y1,sh.y2);
+      const w=Math.abs(sh.x2-sh.x1), h=Math.abs(sh.y2-sh.y1);
+      return {x,y,w,h};
+    }
+    if(sh.type==="pen"){
+      let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+      sh.pts.forEach(p=>{ if(p.x<minX)minX=p.x; if(p.y<minY)minY=p.y; if(p.x>maxX)maxX=p.x; if(p.y>maxY)maxY=p.y; });
+      return {x:minX,y:minY,w:maxX-minX,h:maxY-minY};
+    }
+    return {x:0,y:0,w:0,h:0};
+  }
+
+  function drawSelectionOutline(ctx, sh){
+    const b=shapeBounds(sh);
+    const pad=6;
+    ctx.save();
+    ctx.strokeStyle="#14213D";
+    ctx.lineWidth=1.5;
+    ctx.setLineDash([6,4]);
+    ctx.strokeRect(b.x-pad, b.y-pad, b.w+pad*2, b.h+pad*2);
+    // small handle in top-right corner
+    ctx.setLineDash([]);
+    ctx.fillStyle="#E07A2F";
+    ctx.fillRect(b.x+b.w+pad-4, b.y-pad-4, 8, 8);
+    ctx.restore();
+  }
+
+  // Hit-test: does a point lie on/inside a shape?
+  function distToSegment(px, py, x1, y1, x2, y2){
+    const dx=x2-x1, dy=y2-y1;
+    const len2=dx*dx+dy*dy || 1;
+    let t = ((px-x1)*dx + (py-y1)*dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const cx=x1+t*dx, cy=y1+t*dy;
+    return Math.hypot(px-cx, py-cy);
+  }
+  function hitShape(sh, p){
+    const tol=8;   // pixels
+    if(sh.type==="rect"){
+      const b=shapeBounds(sh);
+      // Hit on stroke: near any of the 4 edges
+      const near = (
+        (Math.abs(p.x-b.x)<=tol || Math.abs(p.x-(b.x+b.w))<=tol) && p.y>=b.y-tol && p.y<=b.y+b.h+tol
+      ) || (
+        (Math.abs(p.y-b.y)<=tol || Math.abs(p.y-(b.y+b.h))<=tol) && p.x>=b.x-tol && p.x<=b.x+b.w+tol
+      );
+      // Also allow hit on the interior for easier grabbing
+      const inside = p.x>=b.x && p.x<=b.x+b.w && p.y>=b.y && p.y<=b.y+b.h;
+      return near || inside;
+    }
+    if(sh.type==="highlight"){
+      const b=shapeBounds(sh);
+      return p.x>=b.x-tol && p.x<=b.x+b.w+tol && p.y>=b.y-tol && p.y<=b.y+b.h+tol;
+    }
+    if(sh.type==="arrow"||sh.type==="line"){
+      return distToSegment(p.x,p.y,sh.x1,sh.y1,sh.x2,sh.y2) <= tol;
+    }
+    if(sh.type==="pen"){
+      for(let i=1;i<sh.pts.length;i++){
+        if(distToSegment(p.x,p.y,sh.pts[i-1].x,sh.pts[i-1].y,sh.pts[i].x,sh.pts[i].y) <= tol) return true;
+      }
+      return false;
+    }
+    return false;
+  }
+  function pickTopShapeAt(p){
+    // Iterate topmost first (creation order = z-order; highlights are drawn under others visually
+    // but for picking, top of the array = drawn last = on top)
+    for(let i=shapes.length-1; i>=0; i--){
+      if(hitShape(shapes[i], p)) return i;
+    }
+    return -1;
+  }
+
+  function moveShapeBy(sh, dx, dy){
+    if(sh.type==="rect"||sh.type==="highlight"){ sh.x+=dx; sh.y+=dy; }
+    else if(sh.type==="arrow"||sh.type==="line"){ sh.x1+=dx; sh.y1+=dy; sh.x2+=dx; sh.y2+=dy; }
+    else if(sh.type==="pen"){ sh.pts=sh.pts.map(pt=>({x:pt.x+dx,y:pt.y+dy})); }
+  }
+  function cloneShape(sh){ return JSON.parse(JSON.stringify(sh)); }
+
+  function aPos(e){ const r=aCanvas.getBoundingClientRect(); return {x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,y:(e.touches?e.touches[0].clientY:e.clientY)-r.top}; }
+
+  function aStartDraw(e){
+    e.preventDefault();
+    const p=aPos(e);
+    if(curTool==="select"){
+      // Selection / drag start
+      const idx = pickTopShapeAt(p);
+      if(idx>=0){
+        setSelected(idx);
+        dragMode="move";
+        dragStart=p;
+        dragOrig=cloneShape(shapes[idx]);
+        aCanvas.classList.add("dragging");
+      } else {
+        setSelected(-1);
+      }
+      return;
+    }
+    aDrawing=true; aStart=p; penPts=[p];
+  }
+  function aMoveDraw(e){
+    const p=aPos(e);
+    if(curTool==="select"){
+      if(dragMode==="move" && selectedIdx>=0){
+        e.preventDefault();
+        const dx=p.x-dragStart.x, dy=p.y-dragStart.y;
+        // reset to orig then apply delta (avoids accumulation drift)
+        shapes[selectedIdx]=cloneShape(dragOrig);
+        moveShapeBy(shapes[selectedIdx], dx, dy);
+        redrawAnnot();
+      } else {
+        // Hover feedback
+        const hit = pickTopShapeAt(p) >= 0;
+        aCanvas.classList.toggle("hover-shape", hit);
+      }
+      return;
+    }
+    if(!aDrawing) return; e.preventDefault();
+    let shape;
+    if(curTool==="arrow") shape={type:"arrow",color:curColor,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y};
+    else if(curTool==="line") shape={type:"line",color:curColor,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y};
+    else if(curTool==="rect") shape={type:"rect",color:curColor,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)};
+    else if(curTool==="highlight") shape={type:"highlight",color:curColor,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)};
+    else { penPts.push(p); shape={type:"pen",color:curColor,pts:penPts}; }
+    redrawAnnot(shape);
+  }
+  function aEndDraw(e){
+    if(curTool==="select"){
+      if(dragMode==="move"){ dragMode=null; dragStart=null; dragOrig=null; aCanvas.classList.remove("dragging"); }
+      return;
+    }
+    if(!aDrawing) return; aDrawing=false; e.preventDefault();
+    const p=aPos(e);
+    if(curTool==="arrow"){ if(Math.hypot(p.x-aStart.x,p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"arrow",color:curColor,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y}); }
+    else if(curTool==="line"){ if(Math.hypot(p.x-aStart.x,p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"line",color:curColor,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y}); }
+    else if(curTool==="rect"){ if(Math.abs(p.x-aStart.x)>4&&Math.abs(p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"rect",color:curColor,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)}); }
+    else if(curTool==="highlight"){ if(Math.abs(p.x-aStart.x)>4&&Math.abs(p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"highlight",color:curColor,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)}); }
+    else { if(penPts.length>1) shapes.push({id:++shapeUid,type:"pen",color:curColor,pts:penPts}); }
+    redrawAnnot();
+  }
+  aCanvas.addEventListener("mousedown",aStartDraw); aCanvas.addEventListener("mousemove",aMoveDraw); window.addEventListener("mouseup",aEndDraw);
+  aCanvas.addEventListener("touchstart",aStartDraw,{passive:false}); aCanvas.addEventListener("touchmove",aMoveDraw,{passive:false}); aCanvas.addEventListener("touchend",aEndDraw,{passive:false});
+
+  // Delete selected shape (via button or keyboard)
+  function deleteSelectedShape(){
+    if(selectedIdx<0 || !shapes[selectedIdx]) return;
+    shapes.splice(selectedIdx,1);
+    setSelected(-1);
+  }
+  $("#annotDelete").addEventListener("click",deleteSelectedShape);
+  document.addEventListener("keydown",e=>{
+    if(!annot.classList.contains("open")) return;
+    // Ignore key events from inputs
+    const tag = document.activeElement ? document.activeElement.tagName : "";
+    if(/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+    if((e.key==="Delete"||e.key==="Backspace") && selectedIdx>=0){
+      e.preventDefault(); deleteSelectedShape();
+    } else if(e.key==="Escape"){
+      if(selectedIdx>=0){ e.preventDefault(); setSelected(-1); }
+    }
+  });
+
+  $("#annotUndo").addEventListener("click",()=>{ shapes.pop(); setSelected(-1); redrawAnnot(); });
+  $("#annotClear").addEventListener("click",()=>{ shapes=[]; setSelected(-1); redrawAnnot(); });
+  $("#annotCancel").addEventListener("click",closeAnnot);
+  $("#annotSave").addEventListener("click",()=>{
+    const s=shots.find(x=>x.id===annotEditId); if(!s){ closeAnnot(); return; }
+    const out=document.createElement("canvas"); out.width=baseImg.naturalWidth; out.height=baseImg.naturalHeight;
+    const octx=out.getContext("2d"); octx.drawImage(baseImg,0,0);
+    const inv=1/aScale;
+    // Draw highlights first, then the rest — same ordering as on-canvas
+    const highlights=shapes.filter(sh=>sh.type==="highlight");
+    const others=shapes.filter(sh=>sh.type!=="highlight");
+    [...highlights, ...others].forEach(sh=>{
+      const big=JSON.parse(JSON.stringify(sh));
+      if(sh.type==="rect"||sh.type==="highlight"){ big.x*=inv; big.y*=inv; big.w*=inv; big.h*=inv; }
+      else if(sh.type==="arrow"||sh.type==="line"){ big.x1*=inv; big.y1*=inv; big.x2*=inv; big.y2*=inv; }
+      else if(sh.type==="pen"){ big.pts=sh.pts.map(p=>({x:p.x*inv,y:p.y*inv})); }
+      drawShape(octx,big,out.width);
+    });
+    s.dataUrl=out.toDataURL("image/png"); closeAnnot(); render(); scheduleSave(); toast("Annotations saved","ok");
+  });
+
+  /* ====== model + render ====== */
+  function addShot(dataUrl){ const s={id:++uid,dataUrl,step:"",desc:"",status:"untested",ts:new Date(),caseId:null}; shots.push(s); render(); scheduleSave(); return s; }
+
+  /* ====== selection + copy/move to test cases ====== */
+  const selected = new Set(); // set of shot ids
+  const selBar=$("#selBar"), selCountEl=$("#selCount"), btnSelectAll=$("#btnSelectAll");
+  const cmModal=$("#copyMoveModal");
+  const cmClose=$("#cmClose"), cmCancel=$("#cmCancel"), cmConfirm=$("#cmConfirm");
+  const cmCaseList=$("#cmCaseList"), cmNewCase=$("#cmNewCase");
+  const cmTitle=$("#cmTitle"), cmListLabel=$("#cmListLabel");
+  let cmMode = "copy";           // "copy" | "move"
+  let cmSelectedCases = new Set(); // case ids chosen in modal
+  let cmMoveTargetId = null;      // single target for move mode
+
+  function selectionCount(){ return selected.size; }
+  function updateSelectionUI(){
+    const n = selectionCount();
+    selBar.classList.toggle("show", n>0);
+    if(n>0) selCountEl.textContent = `${n} selected`;
+    if(btnSelectAll){
+      const allOn = shots.length>0 && n===shots.length;
+      btnSelectAll.classList.toggle("on", allOn);
+      btnSelectAll.innerHTML = allOn
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8"/></svg> Deselect all`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Select all`;
+    }
+  }
+  function toggleSelectShot(id){
+    if(selected.has(id)) selected.delete(id); else selected.add(id);
+    // pruning stale ids (safety)
+    const valid = new Set(shots.map(s=>s.id));
+    for(const id of Array.from(selected)) if(!valid.has(id)) selected.delete(id);
+    render();
+  }
+  function selectAllShots(){ shots.forEach(s=>selected.add(s.id)); render(); }
+  function clearSelection(){ selected.clear(); render(); }
+
+  // Selection bar buttons
+  selBar.addEventListener("click", e=>{
+    const b=e.target.closest("[data-sb]"); if(!b) return;
+    const a=b.dataset.sb;
+    if(a==="all")   selectAllShots();
+    else if(a==="none")  clearSelection();
+    else if(a==="close") clearSelection();
+    else if(a==="copy")  openCopyMove("copy");
+    else if(a==="move")  openCopyMove("move");
+  });
+  if(btnSelectAll) btnSelectAll.addEventListener("click", ()=>{
+    if(selected.size===shots.length && shots.length>0) clearSelection();
+    else selectAllShots();
+  });
+
+  // === Copy/Move modal ===
+  function openCopyMove(mode){
+    if(!selected.size){ toast("Select at least one screenshot first.","err"); return; }
+    cmMode = mode==="move" ? "move" : "copy";
+    cmSelectedCases.clear();
+    cmMoveTargetId = null;
+    cmNewCase.value = "";
+    renderCopyMoveModal();
+    cmModal.classList.add("show");
+    setTimeout(()=>cmNewCase.blur(), 10);
+  }
+  function closeCopyMove(){ cmModal.classList.remove("show"); }
+  function renderCopyMoveModal(){
+    const n = selected.size;
+    const shotsWord = n===1 ? "screenshot" : "screenshots";
+    cmTitle.textContent = cmMode==="copy"
+      ? `Copy ${n} ${shotsWord} to test cases`
+      : `Move ${n} ${shotsWord} to a test case`;
+    cmListLabel.textContent = cmMode==="copy"
+      ? "Choose one or more test cases to copy into"
+      : "Choose a single test case to move into";
+    // mode toggle buttons
+    cmModal.querySelectorAll(".mode button").forEach(b=>{
+      b.classList.toggle("on", b.dataset.mode===cmMode);
+    });
+    // case list
+    const rows = [];
+    cases.forEach(c=>{
+      const shotCount = shots.filter(s=>s.caseId===c.id).length;
+      const inputType = cmMode==="copy" ? "checkbox" : "radio";
+      const isChecked = cmMode==="copy"
+        ? cmSelectedCases.has(c.id)
+        : cmMoveTargetId===c.id;
+      rows.push(`<label class="${isChecked?"on":""}" data-cid="${c.id}">
+        <input type="${inputType}" name="cmTarget" ${isChecked?"checked":""} data-cid="${c.id}"/>
+        <span class="name">${escHtml(c.name)}</span>
+        <span class="count">${shotCount} shot${shotCount===1?"":"s"}</span>
+      </label>`);
+    });
+    // Ungrouped as a target for MOVE only (Copy to Ungrouped doesn't make sense)
+    if(cmMode==="move"){
+      const ung = shots.filter(s=>!s.caseId).length;
+      const isChecked = cmMoveTargetId==="__none__";
+      rows.push(`<label class="${isChecked?"on":""}" data-cid="__none__">
+        <input type="radio" name="cmTarget" ${isChecked?"checked":""} data-cid="__none__"/>
+        <span class="name" style="color:var(--muted);font-style:italic">Ungrouped</span>
+        <span class="count">${ung} shot${ung===1?"":"s"}</span>
+      </label>`);
+    }
+    cmCaseList.innerHTML = rows.length
+      ? rows.join("")
+      : `<div style="font-size:13px;color:var(--muted);padding:8px 2px">No test cases yet. Type a name below to create one.</div>`;
+    updateConfirmState();
+  }
+  function updateConfirmState(){
+    const hasNewName = cmNewCase.value.trim().length>0;
+    let ok = false;
+    if(cmMode==="copy") ok = cmSelectedCases.size>0 || hasNewName;
+    else ok = cmMoveTargetId!==null || hasNewName;
+    cmConfirm.disabled = !ok;
+  }
+  cmClose.addEventListener("click", closeCopyMove);
+  cmCancel.addEventListener("click", closeCopyMove);
+  cmModal.addEventListener("click", e=>{ if(e.target===cmModal) closeCopyMove(); });
+  cmModal.querySelector(".mode").addEventListener("click", e=>{
+    const b = e.target.closest("[data-mode]"); if(!b) return;
+    cmMode = b.dataset.mode;
+    cmSelectedCases.clear(); cmMoveTargetId = null;
+    renderCopyMoveModal();
+  });
+  cmCaseList.addEventListener("click", e=>{
+    const row = e.target.closest("label[data-cid]"); if(!row) return;
+    const cid = row.dataset.cid;
+    if(cmMode==="copy"){
+      const cidNum = +cid;
+      if(cmSelectedCases.has(cidNum)) cmSelectedCases.delete(cidNum);
+      else cmSelectedCases.add(cidNum);
+    } else {
+      cmMoveTargetId = cid==="__none__" ? "__none__" : +cid;
+    }
+    renderCopyMoveModal();
+  });
+  cmNewCase.addEventListener("input", updateConfirmState);
+  cmConfirm.addEventListener("click", ()=>{
+    const ids = Array.from(selected);
+    if(!ids.length){ closeCopyMove(); return; }
+    // Optionally create a new case first
+    let newCaseId = null;
+    const newName = cmNewCase.value.trim();
+    if(newName){
+      const c = newCase(newName); // uses existing helper — pushes to cases[]
+      newCaseId = c.id;
+    }
+    if(cmMode==="copy"){
+      const targets = Array.from(cmSelectedCases);
+      if(newCaseId!=null) targets.push(newCaseId);
+      if(!targets.length){ closeCopyMove(); return; }
+      let copied = 0;
+      ids.forEach(sid=>{
+        const src = shots.find(x=>x.id===sid); if(!src) return;
+        targets.forEach(cid=>{
+          const dup = {
+            id: ++uid,
+            dataUrl: src.dataUrl,
+            step: src.step,
+            desc: src.desc,
+            status: src.status,
+            ts: new Date(),
+            caseId: cid,
+            clipFilename: src.clipFilename,
+            clipDuration: src.clipDuration
+          };
+          shots.push(dup); copied++;
+        });
+      });
+      closeCopyMove();
+      clearSelection(); // also re-renders
+      scheduleSave();
+      toast(`Copied ${ids.length} screenshot${ids.length===1?"":"s"} \u2192 ${targets.length} test case${targets.length===1?"":"s"} (${copied} new item${copied===1?"":"s"})`,"ok");
+    } else {
+      // move
+      let target = cmMoveTargetId;
+      if(newCaseId!=null) target = newCaseId;
+      if(target===null){ closeCopyMove(); return; }
+      const dest = target==="__none__" ? null : target;
+      ids.forEach(sid=>{ const s = shots.find(x=>x.id===sid); if(s) s.caseId = dest; });
+      const destName = dest===null ? "Ungrouped" : (cases.find(c=>c.id===dest)?.name || "the case");
+      closeCopyMove();
+      clearSelection();
+      scheduleSave();
+      toast(`Moved ${ids.length} screenshot${ids.length===1?"":"s"} \u2192 \u201C${destName}\u201D`,"ok");
+    }
+  });
+  // Close modal on Escape
+  document.addEventListener("keydown", e=>{
+    if(e.key==="Escape" && cmModal.classList.contains("show")){ closeCopyMove(); }
+  });
+  function fmtTime(d){ return d.toLocaleString(undefined,{year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}); }
+  function renderSummary(){
+    const sumEl=$("#summary");
+    if(!shots.length){ sumEl.innerHTML=""; return; }
+    const c={pass:0,fail:0,blocked:0,untested:0}; shots.forEach(s=>c[s.status]++);
+    sumEl.innerHTML=`
+      <span class="stat total"><b>${shots.length}</b> total</span>
+      <span class="stat"><span class="d pass"></span><b>${c.pass}</b> pass</span>
+      <span class="stat"><span class="d fail"></span><b>${c.fail}</b> fail</span>
+      <span class="stat"><span class="d blocked"></span><b>${c.blocked}</b> blocked</span>
+      <span class="stat"><span class="d untested"></span><b>${c.untested}</b> untested</span>`;
+  }
+  // Build ordered groups: each case in cases[] order, then an "Ungrouped" bucket if any unassigned shots.
+  // Preserves shots[] order within each group.
+  function buildGroups(){
+    const valid=new Set(cases.map(c=>c.id));
+    const groups=[];
+    cases.forEach(c=>groups.push({ id:c.id, name:c.name, collapsed:c.collapsed, excluded:!!c.excluded, ref:c, items:[] }));
+    let ungrouped=null;
+    shots.forEach(s=>{
+      const cid = (s.caseId!=null && valid.has(s.caseId)) ? s.caseId : null;
+      if(cid===null){ if(!ungrouped){ ungrouped={ id:null, name:"Ungrouped", collapsed:false, ref:null, items:[] }; } ungrouped.items.push(s); }
+      else groups.find(g=>g.id===cid).items.push(s);
+    });
+    if(ungrouped) groups.push(ungrouped);
+    return groups;
+  }
+  function caseOptionsHtml(selId){
+    let html = cases.map(c=>`<option value="${c.id}" ${selId===c.id?"selected":""}>${escHtml(c.name)}</option>`).join("");
+    html += `<option value="" ${selId==null?"selected":""}>— Ungrouped —</option>`;
+    return html;
+  }
+
+  function cardHtml(s, globalIdx){
+    const clipTag = s.clipFilename ? `<span class="clip-tag" title="Video clip saved: ${escAttr(s.clipFilename)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>CLIP ${s.clipDuration?s.clipDuration+"s":""}</span>` : "";
+    return `<div class="card${selected.has(s.id)?' selected':''}" data-card-id="${s.id}">
+      <div class="thumb">
+        <div class="sel-check${selected.has(s.id)?' on':''}" data-sel="${s.id}" title="Select for copy/move to test case" role="checkbox" aria-checked="${selected.has(s.id)?'true':'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div>
+        <span class="idx">#${globalIdx+1}${clipTag}</span>
+        <img src="${s.dataUrl}" alt="Screenshot ${globalIdx+1}" data-zoom="${s.id}" style="cursor:zoom-in" />
+        <div class="thumb-actions">
+          <button class="thumb-btn" data-act="annot" data-id="${s.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7-3-3-7 7-1 4z"/><path d="M16 9l3-3"/></svg>Annotate
+          </button>
+        </div>
+      </div>
+      <div class="body">
+        <input class="step" placeholder="Step / title (e.g. Login page loads)" value="${escAttr(s.step)}" data-field="step" data-id="${s.id}" />
+        <div style="position:relative">
+          <textarea placeholder="Description \u2014 what was tested, expected vs actual result, notes\u2026" data-field="desc" data-id="${s.id}">${escHtml(s.desc)}</textarea>
+          <button class="ocr-btn" data-act="ocr" data-id="${s.id}" title="Read text from this screenshot and suggest a description" style="position:absolute;right:6px;top:6px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><path d="M8 10h8M8 14h5"/></svg>
+            Read text
+          </button>
+        </div>
+        ${s.ocrSuggestion ? `
+        <div class="ocr-sug">
+          <div class="ocr-sug-head">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><path d="M8 10h8M8 14h5"/></svg>
+            Suggested text from image
+            <span class="sp"></span>
+            <button class="ocr-sug-x" data-act="ocr-dismiss" data-id="${s.id}" title="Dismiss suggestion">\u00D7</button>
+          </div>
+          <div class="ocr-sug-text">${escHtml(s.ocrSuggestion)}</div>
+          <div class="ocr-sug-actions">
+            <button class="primary" data-act="ocr-insert" data-id="${s.id}" title="Append this text to the description">Insert into description</button>
+            <button data-act="ocr-replace" data-id="${s.id}" title="Overwrite the description with this text">Replace description</button>
+            <button class="copy" data-act="ocr-copy" data-id="${s.id}" title="Copy text to clipboard">Copy</button>
+          </div>
+        </div>` : ""}
+        <div class="status-row">
+          <div class="seg" data-id="${s.id}">
+            ${STATUSES.map(st=>`<button data-s="${st}" class="${s.status===st?"on":""}">${STATUS_LABEL[st]}</button>`).join("")}
+          </div>
+          ${cases.length?`<select class="case-select" data-case-for="${s.id}" title="Assign to test case">${caseOptionsHtml(s.caseId)}</select>`:""}
+        </div>
+        <div class="meta">
+          <span class="ts">${fmtTime(s.ts)}</span><span class="spacer"></span>
+          <button class="icon-btn" title="Move up (within case)" data-act="up" data-id="${s.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg></button>
+          <button class="icon-btn" title="Move down (within case)" data-act="down" data-id="${s.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+          <button class="icon-btn danger" title="Delete" data-act="del" data-id="${s.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function render(){
+    const has=shots.length>0;
+    emptyEl.style.display=has?"none":"block";
+    exportBtn.disabled=!has; exportPdfBtn.disabled=!has; resetBtn.disabled=!has;
+    if(btnSelectAll) btnSelectAll.disabled=!has;
+    // prune selection to only valid shot ids (protects against deletes)
+    const validIds = new Set(shots.map(s=>s.id));
+    for(const id of Array.from(selected)) if(!validIds.has(id)) selected.delete(id);
+    $("#caseBar").style.display=has?"flex":"none";
+    renderSummary();
+    shotsEl.innerHTML="";
+
+    const idxOf=new Map(); shots.forEach((s,i)=>idxOf.set(s.id,i));
+    const groups=buildGroups();
+
+    if(!cases.length){
+      // flat list, no group chrome
+      groups[0] && groups[0].items.forEach(s=> shotsEl.insertAdjacentHTML("beforeend", cardHtml(s, idxOf.get(s.id))) );
+      return;
+    }
+
+    groups.forEach(g=>{
+      const c={pass:0,fail:0,blocked:0,untested:0}; g.items.forEach(s=>c[s.status]++);
+      const wrap=document.createElement("div");
+      const isExcluded = g.id!=null && g.excluded;
+      wrap.className="group"+(g.collapsed?" collapsed":"")+(isExcluded?" excluded":"");
+      wrap.dataset.gid = g.id==null?"":g.id;
+      const nameField = g.id==null
+        ? `<span class="case-name" style="cursor:default">${escHtml(g.name)}</span>`
+        : `<input class="case-name" value="${escAttr(g.name)}" data-case-name="${g.id}" placeholder="Test case name" />`;
+      const delBtn = g.id==null ? "" :
+        `<button class="del-case" data-del-case="${g.id}" title="Delete this test case and all screenshots in it (cannot be undone)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>`;
+      const includeToggle = g.id==null ? "" :
+        `<label class="case-include ${!isExcluded?"on":""}" title="Tick to include this case in Export Word / Export PDF. Untick to leave it out of the next report."><input type="checkbox" data-case-include="${g.id}" ${!isExcluded?"checked":""}/><span>${isExcluded?"Excluded":"Include"}</span></label>`;
+      wrap.innerHTML=`
+        <div class="group-head" data-toggle="${g.id==null?"":g.id}">
+          <svg class="caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          ${nameField}
+          <span class="ccount">${g.items.length} shot${g.items.length===1?"":"s"}</span>
+          <span class="mini">
+            <span class="chip pass ${c.pass?"show":""}">${c.pass} P</span>
+            <span class="chip fail ${c.fail?"show":""}">${c.fail} F</span>
+            <span class="chip blocked ${c.blocked?"show":""}">${c.blocked} B</span>
+            <span class="chip untested ${c.untested?"show":""}">${c.untested} U</span>
+          </span>
+          ${includeToggle}
+          ${delBtn}
+        </div>
+        <div class="group-body"></div>`;
+      const body=wrap.querySelector(".group-body");
+      if(!g.items.length){ body.innerHTML=`<div style="color:var(--muted);font-size:13px;padding:6px 2px">No screenshots in this case yet — assign some with the dropdown on a card.</div>`; }
+      else g.items.forEach(s=> body.insertAdjacentHTML("beforeend", cardHtml(s, idxOf.get(s.id))) );
+      shotsEl.appendChild(wrap);
+    });
+    updateSelectionUI();
+  }
+  function escHtml(s){ return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+  function escAttr(s){ return (s||"").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+
+  shotsEl.addEventListener("input",e=>{
+    if(e.target.dataset.caseName!=null && e.target.classList.contains("case-name")){
+      const c=cases.find(x=>x.id===+e.target.dataset.caseName); if(c){ c.name=e.target.value; renderSummary(); scheduleSave(); } return;
+    }
+    const f=e.target.dataset.field; if(!f) return;
+    const s=shots.find(x=>x.id==e.target.dataset.id); if(s){ s[f]=e.target.value; scheduleSave(); }
+  });
+  shotsEl.addEventListener("change",e=>{
+    // include / exclude case in global export
+    const inc=e.target.dataset.caseInclude;
+    if(inc!=null){
+      const c=cases.find(x=>x.id===+inc);
+      if(c){ c.excluded=!e.target.checked; render(); scheduleSave(); }
+      return;
+    }
+    const cf=e.target.dataset.caseFor;
+    if(cf!=null){ const s=shots.find(x=>x.id===+cf); if(s){ s.caseId = e.target.value===""?null:+e.target.value; render(); scheduleSave(); } }
+  });
+  shotsEl.addEventListener("click",e=>{
+    // selection checkbox on a shot thumbnail
+    const sel=e.target.closest(".sel-check");
+    if(sel){ e.stopPropagation(); e.preventDefault();
+      const id=+sel.dataset.sel; toggleSelectShot(id); return;
+    }
+    // clicks inside the include toggle (label/input/span) must not collapse the case
+    if(e.target.closest(".case-include")) { e.stopPropagation(); return; }
+    const head=e.target.closest(".group-head");
+    if(head && !e.target.closest(".case-name") && !e.target.closest(".del-case") && !e.target.closest(".case-include")){
+      const gid=head.dataset.toggle; if(gid!==""){ const c=cases.find(x=>x.id===+gid); if(c){ c.collapsed=!c.collapsed; head.parentElement.classList.toggle("collapsed"); scheduleSave(); } }
+      return;
+    }
+    const delCase=e.target.closest(".del-case");
+    if(delCase){ const cid=+delCase.dataset.delCase;
+      const c = cases.find(x=>x.id===cid);
+      const shotsInCase = shots.filter(s=>s.caseId===cid);
+      const caseName = c ? c.name : "this case";
+      const shotWord = shotsInCase.length===1 ? "screenshot" : "screenshots";
+      const msg = shotsInCase.length
+        ? `Delete "${caseName}" and its ${shotsInCase.length} ${shotWord}?\n\nThis cannot be undone. All screenshots in this case will be permanently removed.`
+        : `Delete "${caseName}"? This case is empty.`;
+      if(confirm(msg)){
+        // remove all shots in this case, then remove the case itself
+        const removedIds = new Set(shotsInCase.map(s=>s.id));
+        removedIds.forEach(id=>selected.delete(id));
+        shots = shots.filter(s=>s.caseId!==cid);
+        cases = cases.filter(c=>c.id!==cid);
+        render(); scheduleSave();
+        if(shotsInCase.length) toast(`Deleted "${caseName}" and ${shotsInCase.length} ${shotWord}`,"ok");
+        else toast(`Deleted empty case "${caseName}"`,"ok");
+      }
+      return;
+    }
+    const seg=e.target.closest(".seg button");
+    if(seg){ const id=+seg.parentElement.dataset.id, s=shots.find(x=>x.id===id); if(s){ s.status=seg.dataset.s; render(); scheduleSave(); } return; }
+    const z=e.target.closest("[data-zoom]"); if(z){ const s=shots.find(x=>x.id==z.dataset.zoom); if(s){ $("#lightboxImg").src=s.dataUrl; $("#lightbox").classList.add("open"); } return; }
+    const btn=e.target.closest("[data-act]"); if(!btn) return;
+    const id=+btn.dataset.id, idx=shots.findIndex(x=>x.id===id); if(idx<0) return;
+    const act=btn.dataset.act;
+    if(act==="ocr"){ runOcrOnShot(id, btn); return; }
+    if(act==="ocr-insert"){ applyOcrSuggestion(id,"insert"); return; }
+    if(act==="ocr-replace"){ applyOcrSuggestion(id,"replace"); return; }
+    if(act==="ocr-copy"){ applyOcrSuggestion(id,"copy"); return; }
+    if(act==="ocr-dismiss"){ dismissOcrSuggestion(id); return; }
+    if(act==="annot"){ openAnnot(id); return; }
+    if(act==="del"){ selected.delete(shots[idx].id); shots.splice(idx,1); }
+    else if(act==="up"||act==="down"){
+      const me=shots[idx];
+      const sameCase = shots.map((s,i)=>({s,i})).filter(o=>o.s.caseId===me.caseId);
+      const pos = sameCase.findIndex(o=>o.s.id===id);
+      const swapWith = act==="up" ? sameCase[pos-1] : sameCase[pos+1];
+      if(swapWith){ const a=idx, b=swapWith.i; [shots[a],shots[b]]=[shots[b],shots[a]]; }
+    }
+    render(); scheduleSave();
+  });
+  $("#lightbox").addEventListener("click",()=>$("#lightbox").classList.remove("open"));
+  $("#docTitle").addEventListener("input",scheduleSave);
+
+  /* ====== upload ====== */
+  $("#btnUpload").addEventListener("click",()=>$("#fileInput").click());
+  $("#fileInput").addEventListener("change",e=>{
+    const files=[...e.target.files]; let pending=files.length; if(!pending) return;
+    files.forEach(file=>{ const r=new FileReader(); r.onload=ev=>{ addShot(ev.target.result); if(--pending===0) toast(`${files.length} image(s) added`,"ok"); }; r.readAsDataURL(file); });
+    e.target.value="";
+  });
+
+  /* ====== buttons + hotkeys ====== */
+  $("#btnFull").addEventListener("click",captureFull);
+  $("#btnRegion").addEventListener("click",captureRegion);
+  $("#btnAddCase").addEventListener("click",()=>{ newCase(); render(); scheduleSave(); toast("Test case added","ok"); });
+  resetBtn.addEventListener("click",async()=>{
+    if(shots.length&&confirm("Remove all screenshots and clear saved data? This can't be undone.")){
+      shots=[]; cases=[]; uid=0; caseUid=0; selected.clear(); render();
+      if(db&&supportsDB){ try{ await new Promise(res=>{ const tx=db.transaction(STORE,"readwrite"); tx.objectStore(STORE).delete(KEY); tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
+      setSaveState("saved");
+    }
+  });
+  document.addEventListener("keydown",e=>{
+    if(/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+    if(annot.classList.contains("open")){ if(e.key==="Escape") closeAnnot(); return; }
+    if(cropper.classList.contains("open")){ if(e.key==="Escape") closeCropper(); return; }
+    if($("#lightbox").classList.contains("open")){ if(e.key==="Escape") $("#lightbox").classList.remove("open"); return; }
+    if(e.key==="r"||e.key==="R"){ e.preventDefault(); captureRegion(); }
+    if(e.key==="f"||e.key==="F"){ e.preventDefault(); captureFull(); }
+  });
+
+  /* ====== export ====== */
+  function dataUrlToUint8(d){ const b=atob(d.split(",")[1]),a=new Uint8Array(b.length); for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i); return a; }
+  function imgDims(d){ return new Promise(res=>{ const im=new Image(); im.onload=()=>res({w:im.naturalWidth,h:im.naturalHeight}); im.src=d; }); }
+
+  /* Shared Word builder — produces a .docx blob from any list of groups.
+     Used by the global "Export Word" button (all groups) AND per-case download
+     (single-group). When showBreakdownTable is true (global only) we include the
+     "By test case" summary table; per-case exports skip it. */
+  async function buildWordBlob(groupsToInclude, title, showBreakdownTable){
+    const D=window.docx, MAX_W=600;
+    const allShots=[]; groupsToInclude.forEach(g=>g.items.forEach(s=>allShots.push(s)));
+    const c={pass:0,fail:0,blocked:0,untested:0}; allShots.forEach(s=>c[s.status]++);
+    const children=[];
+    children.push(new D.Paragraph({ text:title, heading:D.HeadingLevel.TITLE }));
+    children.push(new D.Paragraph({ spacing:{after:160}, children:[ new D.TextRun({ text:`Generated ${new Date().toLocaleString()} \u00B7 ${allShots.length} screenshot(s) \u00B7 ${groupsToInclude.length} group(s)`, italics:true, color:"6B6557", size:20 }) ] }));
+    const cell=(text,bold,color)=> new D.TableCell({ margins:{top:60,bottom:60,left:120,right:120}, children:[ new D.Paragraph({ children:[ new D.TextRun({ text:String(text), bold:!!bold, color:color||"14213D", size:20 }) ] }) ] });
+    const hdr=(t)=> new D.TableCell({ shading:{fill:"14213D"}, margins:{top:60,bottom:60,left:120,right:120}, children:[ new D.Paragraph({ children:[ new D.TextRun({ text:t, bold:true, color:"FFFFFF", size:20 }) ] }) ] });
+    // overall summary
+    children.push(new D.Paragraph({ heading:D.HeadingLevel.HEADING_2, spacing:{before:60,after:80}, children:[ new D.TextRun({ text:"Summary" }) ] }));
+    children.push(new D.Table({ width:{size:100,type:D.WidthType.PERCENTAGE}, rows:[
+      new D.TableRow({ children:[hdr("Total"),hdr("Pass"),hdr("Fail"),hdr("Blocked"),hdr("Untested")] }),
+      new D.TableRow({ children:[ cell(allShots.length,true), cell(c.pass,true,STATUS_HEX.pass), cell(c.fail,true,STATUS_HEX.fail), cell(c.blocked,true,STATUS_HEX.blocked), cell(c.untested,true,STATUS_HEX.untested) ] }),
+    ] }));
+    // per-case breakdown table — only on global export with multiple groups
+    if(showBreakdownTable && groupsToInclude.length>1){
+      children.push(new D.Paragraph({ spacing:{before:160,after:60}, children:[ new D.TextRun({ text:"By test case", bold:true, size:22 }) ] }));
+      const rows=[ new D.TableRow({ children:[hdr("Test case"),hdr("Total"),hdr("Pass"),hdr("Fail"),hdr("Blocked"),hdr("Untested")] }) ];
+      groupsToInclude.forEach(g=>{ const gc={pass:0,fail:0,blocked:0,untested:0}; g.items.forEach(s=>gc[s.status]++);
+        rows.push(new D.TableRow({ children:[ cell(g.name,true), cell(g.items.length), cell(gc.pass,false,STATUS_HEX.pass), cell(gc.fail,false,STATUS_HEX.fail), cell(gc.blocked,false,STATUS_HEX.blocked), cell(gc.untested,false,STATUS_HEX.untested) ] })); });
+      children.push(new D.Table({ width:{size:100,type:D.WidthType.PERCENTAGE}, rows }));
+    }
+    children.push(new D.Paragraph({ spacing:{after:120}, children:[] }));
+    let n=0, caseIdx=0;
+    const showGroupHeadings = groupsToInclude.length>1 || (groupsToInclude[0] && groupsToInclude[0].id!=null);
+    for(const g of groupsToInclude){
+      if(showGroupHeadings){
+        const gc={pass:0,fail:0,blocked:0,untested:0}; g.items.forEach(s=>gc[s.status]++);
+        children.push(new D.Paragraph({ heading:D.HeadingLevel.HEADING_1, spacing:{before:320,after:40}, pageBreakBefore: caseIdx>0, children:[ new D.TextRun({ text:g.name }) ] }));
+        children.push(new D.Paragraph({ spacing:{after:120}, children:[ new D.TextRun({ text:`${g.items.length} screenshot(s) \u2014 `, italics:true, color:"6B6557", size:20 }),
+          new D.TextRun({ text:`${gc.pass} pass, ${gc.fail} fail, ${gc.blocked} blocked, ${gc.untested} untested`, italics:true, color:"6B6557", size:20 }) ] }));
+      }
+      caseIdx++;
+      for(let i=0;i<g.items.length;i++){
+        const s=g.items[i]; n++;
+        const dim=await imgDims(s.dataUrl), w=Math.min(MAX_W,dim.w), h=Math.round(dim.h*(w/dim.w));
+        children.push(new D.Paragraph({ heading:D.HeadingLevel.HEADING_2, spacing:{before:240,after:40}, children:[ new D.TextRun({ text:`${i+1}. ${s.step.trim()||"Screenshot "+n}` }) ] }));
+        children.push(new D.Paragraph({ spacing:{after:80}, children:[
+          new D.TextRun({ text:"Status: ", bold:true, size:20 }),
+          new D.TextRun({ text:STATUS_LABEL[s.status], bold:true, color:STATUS_HEX[s.status], size:20 }),
+        ] }));
+        children.push(new D.Paragraph({ spacing:{after:80}, children:[ new D.ImageRun({ data:dataUrlToUint8(s.dataUrl), transformation:{width:w,height:h} }) ] }));
+        const dt=s.desc.trim();
+        if(dt) dt.split(/\n/).forEach(line=> children.push(new D.Paragraph({ spacing:{after:40}, children:[ new D.TextRun({ text:line, size:22 }) ] })));
+        children.push(new D.Paragraph({ spacing:{after:120}, border:{ bottom:{ color:"D8D3C7", space:8, style:D.BorderStyle.SINGLE, size:6 } }, children:[ new D.TextRun({ text:`Captured: ${fmtTime(s.ts)}`, italics:true, color:"9A9486", size:18 }) ] }));
+      }
+    }
+    const doc=new D.Document({ creator:"Now Captures", title, sections:[{ properties:{}, children }] });
+    return await D.Packer.toBlob(doc);
+  }
+
+  function safeFileName(s){ return (s||"").replace(/[^\w\-]+/g,"_").replace(/^_+|_+$/g,"")||"test_report"; }
+
+  async function ensureExportLibsReady(needPdf){
+    if(window.__libsReady) await window.__libsReady;
+    const missing=[];
+    if(!window.docx && !needPdf) missing.push("docx");
+    if(needPdf && !window.PDFLib) missing.push("pdf-lib");
+    if(!needPdf && !window.docx) missing.push("docx");
+    if(!window.saveAs) missing.push("FileSaver");
+    if(missing.length) throw new Error("Library not loaded: "+missing.join(", ")+". The export libraries failed to download. Most common cause: this network blocks cdnjs, jsdelivr, and unpkg (e.g. a corporate firewall or strict ad-blocker). Disable the blocker on localhost or try a different network, then reload.");
+  }
+
+  exportBtn.addEventListener("click",async()=>{
+    if(!shots.length) return;
+    exportBtn.disabled=true; const prev=exportBtn.innerHTML; exportBtn.innerHTML="Building\u2026";
+    try{
+      await ensureExportLibsReady(false);
+      const baseTitle=$("#docTitle").value.trim()||"Test Evidence Report";
+      const fl=filterLabel(); const title = fl ? `${baseTitle} (${fl})` : baseTitle;
+      let groupsForExport=buildGroups().filter(g => !(g.id!=null && g.excluded));
+      groupsForExport=applyStatusFilterToGroups(groupsForExport);
+      const totalShots=groupsForExport.reduce((n,g)=>n+g.items.length,0);
+      if(!totalShots){
+        const excluded=cases.filter(c=>c.excluded).length;
+        if(fl) throw new Error(`No screenshots match the filter "${fl}". Change the Include dropdown or status of some shots.`);
+        throw new Error(excluded?`All ${excluded} test case(s) are excluded — tick at least one "Include" to export.`:"No screenshots to export.");
+      }
+      const blob=await buildWordBlob(groupsForExport, title, true);
+      const fileBase=safeFileName(baseTitle)+(fl?"_"+safeFileName(fl):"");
+      saveAs(blob, `${fileBase}.docx`);
+      const excludedCount=cases.filter(c=>c.excluded).length;
+      const parts=[]; if(fl) parts.push(`filter: ${fl}`); if(excludedCount) parts.push(`${excludedCount} excluded case${excludedCount===1?"":"s"} skipped`);
+      toast(parts.length?`Word document downloaded (${parts.join(", ")})`:"Word document downloaded","ok");
+    }catch(err){ console.error(err); toast("Export failed: "+(err.message||err),"err"); }
+    finally{ exportBtn.innerHTML=prev; exportBtn.disabled=shots.length===0; }
+  });
+
+  /* Shared PDF builder — bytes from any list of groups. */
+  async function buildPdfBytes(groupsToInclude, title){
+    const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+    const allShots=[]; groupsToInclude.forEach(g=>g.items.forEach(s=>allShots.push(s)));
+    const doc=await PDFDocument.create();
+    const font=await doc.embedFont(StandardFonts.Helvetica);
+    const bold=await doc.embedFont(StandardFonts.HelveticaBold);
+    const ital=await doc.embedFont(StandardFonts.HelveticaOblique);
+    const PAGE_W=595, PAGE_H=842, M=50, CONTENT_W=PAGE_W-M*2;
+    const hex=h=>rgb(parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255);
+    const INK=hex("14213D"), MUTED=hex("6B6557"), LINE=hex("D8D3C7");
+    const STAT_RGB={untested:hex("9A9486"),pass:hex("2F7D4F"),fail:hex("C0392B"),blocked:hex("B8860B")};
+    let page=doc.addPage([PAGE_W,PAGE_H]); let y=PAGE_H-M;
+    function ensure(space){ if(y-space < M){ page=doc.addPage([PAGE_W,PAGE_H]); y=PAGE_H-M; } }
+    function wrap(text,f,size,maxW){ const out=[]; text.split(/\n/).forEach(par=>{ const words=par.split(/\s+/); let cur=""; for(const w of words){ const t=cur?cur+" "+w:w; if(f.widthOfTextAtSize(t,size)>maxW && cur){ out.push(cur); cur=w; } else cur=t; } out.push(cur); }); return out; }
+    function drawText(text,f,size,color,maxW,lh){ const lines=wrap(text,f,size,maxW||CONTENT_W); lines.forEach(ln=>{ ensure(size+ (lh||4)); page.drawText(ln,{x:M,y:y-size,size,font:f,color}); y-=size+(lh||4); }); }
+    // title
+    page.drawText(title,{x:M,y:y-22,size:22,font:bold,color:INK}); y-=34;
+    drawText(`Generated ${new Date().toLocaleString()} \u00B7 ${allShots.length} screenshot(s) \u00B7 ${groupsToInclude.length} group(s)`, ital,10,MUTED,CONTENT_W,6);
+    y-=8;
+    // summary chips row
+    const overall={pass:0,fail:0,blocked:0,untested:0}; allShots.forEach(s=>overall[s.status]++);
+    ensure(26); let cx=M;
+    const chip=(label,val,col)=>{ const txt=`${label}: ${val}`; const w=font.widthOfTextAtSize(txt,10)+16; page.drawRectangle({x:cx,y:y-18,width:w,height:16,color:col,opacity:1,borderColor:col}); page.drawText(txt,{x:cx+8,y:y-15,size:10,font:bold,color:rgb(1,1,1)}); cx+=w+8; };
+    chip("Total",allShots.length,INK); chip("Pass",overall.pass,STAT_RGB.pass); chip("Fail",overall.fail,STAT_RGB.fail); chip("Blocked",overall.blocked,STAT_RGB.blocked); chip("Untested",overall.untested,STAT_RGB.untested);
+    y-=30;
+    let n=0;
+    const showGroupHeadings = groupsToInclude.length>1 || (groupsToInclude[0] && groupsToInclude[0].id!=null);
+    for(const g of groupsToInclude){
+      if(showGroupHeadings){
+        ensure(40);
+        y-=6; page.drawLine({start:{x:M,y},end:{x:PAGE_W-M,y},thickness:1,color:LINE}); y-=18;
+        page.drawText(g.name,{x:M,y:y-14,size:15,font:bold,color:INK}); y-=20;
+        const gc={pass:0,fail:0,blocked:0,untested:0}; g.items.forEach(s=>gc[s.status]++);
+        drawText(`${g.items.length} screenshot(s) \u2014 ${gc.pass} pass, ${gc.fail} fail, ${gc.blocked} blocked, ${gc.untested} untested`, ital,9,MUTED,CONTENT_W,5);
+        y-=4;
+      }
+      for(let i=0;i<g.items.length;i++){
+        const s=g.items[i]; n++;
+        ensure(28);
+        page.drawText(`${i+1}. ${s.step.trim()||"Screenshot "+n}`,{x:M,y:y-13,size:13,font:bold,color:INK}); y-=20;
+        const sl=STATUS_LABEL[s.status], pw=font.widthOfTextAtSize(sl,9)+14;
+        ensure(16); page.drawRectangle({x:M,y:y-13,width:pw,height:13,color:STAT_RGB[s.status]}); page.drawText(sl,{x:M+7,y:y-10.5,size:9,font:bold,color:rgb(1,1,1)}); y-=20;
+        const png=await doc.embedPng(s.dataUrl);
+        let iw=png.width, ih=png.height; const ds=Math.min(CONTENT_W/iw,1); iw*=ds; ih*=ds;
+        if(ih>PAGE_H-M*2){ const fit=(PAGE_H-M*2)/ih; iw*=fit; ih*=fit; }
+        ensure(ih+10); page.drawImage(png,{x:M,y:y-ih,width:iw,height:ih}); y-=ih+8;
+        const dt=s.desc.trim(); if(dt){ drawText(dt,font,11,INK,CONTENT_W,4); }
+        drawText(`Captured: ${fmtTime(s.ts)}`,ital,8,hex("9A9486"),CONTENT_W,3);
+        y-=4; ensure(6); page.drawLine({start:{x:M,y},end:{x:PAGE_W-M,y},thickness:0.7,color:LINE}); y-=12;
+      }
+    }
+    return await doc.save();
+  }
+
+  exportPdfBtn.addEventListener("click",async()=>{
+    if(!shots.length) return;
+    exportPdfBtn.disabled=true; const prev=exportPdfBtn.innerHTML; exportPdfBtn.innerHTML="Building\u2026";
+    try{
+      await ensureExportLibsReady(true);
+      const baseTitle=$("#docTitle").value.trim()||"Test Evidence Report";
+      const fl=filterLabel(); const title = fl ? `${baseTitle} (${fl})` : baseTitle;
+      let groupsForExport=buildGroups().filter(g => !(g.id!=null && g.excluded));
+      groupsForExport=applyStatusFilterToGroups(groupsForExport);
+      const totalShots=groupsForExport.reduce((n,g)=>n+g.items.length,0);
+      if(!totalShots){
+        const excluded=cases.filter(c=>c.excluded).length;
+        if(fl) throw new Error(`No screenshots match the filter "${fl}". Change the Include dropdown or status of some shots.`);
+        throw new Error(excluded?`All ${excluded} test case(s) are excluded — tick at least one "Include" to export.`:"No screenshots to export.");
+      }
+      const bytes=await buildPdfBytes(groupsForExport, title);
+      const fileBase=safeFileName(baseTitle)+(fl?"_"+safeFileName(fl):"");
+      saveAs(new Blob([bytes],{type:"application/pdf"}), `${fileBase}.pdf`);
+      const excludedCount=cases.filter(c=>c.excluded).length;
+      const parts=[]; if(fl) parts.push(`filter: ${fl}`); if(excludedCount) parts.push(`${excludedCount} excluded case${excludedCount===1?"":"s"} skipped`);
+      toast(parts.length?`PDF downloaded (${parts.join(", ")})`:"PDF downloaded","ok");
+    }catch(err){ console.error(err); toast("PDF export failed: "+(err.message||err),"err"); }
+    finally{ exportPdfBtn.innerHTML=prev; exportPdfBtn.disabled=shots.length===0; }
+  });
+
+  /* ====== boot ====== */
+  function showCaptureBanner(){
+    const reason=captureBlockedReason();
+    const b=$("#captureBanner"), t=$("#captureBannerText");
+    if(!reason){ b.classList.remove("show"); return; }
+    let msg;
+    if(reason==="file") msg=`<b>Screen capture is disabled because this file was opened directly.</b> Browsers block screen capture on <code>file://</code> pages. To enable it, serve the file over a local server (e.g. run <code>python -m http.server</code> in its folder, then open <code>http://localhost:8000/screenshot-tool.html</code>), or just use <b>Add image</b> to import screenshots you take with your OS tool.`;
+    else if(reason==="insecure") msg=`<b>Screen capture needs a secure page.</b> This page isn't running over https or localhost, so the browser blocks it. Use <b>Add image</b>, or open the tool over https / localhost.`;
+    else msg=`<b>Screen capture isn't available in this browser or view.</b> If you're previewing inside another app, open the saved file in a normal browser tab. You can still use <b>Add image</b> to import screenshots.`;
+    t.innerHTML=msg; b.classList.add("show");
+  }
+  (async function(){
+    db=await openDB();
+    setSaveState("saved");
+    await loadSaved();
+    render();
+    showCaptureBanner();
+    // surface library load failures upfront, not after a failed export
+    if(window.__libsReady){
+      window.__libsReady.then(()=>{
+        const failed=window.__libsStatus&&window.__libsStatus.failed||[];
+        if(failed.length){
+          const b=$("#captureBanner"), t=$("#captureBannerText");
+          if(b&&t){
+            t.innerHTML=`<b>Export libraries didn't load:</b> ${failed.join(", ")}. Word/PDF export needs these from cdnjs / jsdelivr / unpkg — all three were blocked from this page. Common cause: a corporate firewall, VPN, or strict ad/script blocker. Try whitelisting those CDNs, switching networks, or disabling the blocker on <code>localhost</code>, then reload. Screen capture and the rest of the tool still work.`;
+            b.classList.add("show");
+          }
+          try{ toast("Export libraries failed to load — see banner.","err"); }catch(_){}
+        }
+      });
+    }
+  })();
+})();
+</script>
+</body>
+</html>
