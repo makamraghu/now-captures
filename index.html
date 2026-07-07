@@ -187,6 +187,12 @@
   .group-head .del-case{border:1px solid var(--line);background:#fff;border-radius:8px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted)}
   .group-head .del-case:hover{color:#fff;background:#c0392b;border-color:#c0392b}
   .group-head .del-case svg{width:15px;height:15px}
+  .group-head .case-selectall{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:8px;height:30px;padding:0 10px;font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .group-head .case-selectall:hover{border-color:var(--accent);color:var(--accent)}
+  .group-head .case-selectall.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .group-head .case-selectall.on:hover{background:#d06a1f;border-color:#d06a1f;color:#fff}
+  .group-head .case-selectall svg{width:13px;height:13px}
+  .group-head .case-selectall.some{border-color:var(--accent);color:var(--accent);background:#fff7ee}
   .group-head .case-include{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;cursor:pointer;user-select:none;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;height:30px}
   .group-head .case-include input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;margin:0}
   .group-head .case-include:hover{border-color:var(--accent)}
@@ -279,6 +285,8 @@
   #selBar button:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.5)}
   #selBar button.primary{background:var(--accent);border-color:var(--accent)}
   #selBar button.primary:hover{background:#d06a1f;border-color:#d06a1f}
+  #selBar button.danger{border-color:rgba(224,47,47,.5);color:#ffb3b3}
+  #selBar button.danger:hover{background:#c0392b;border-color:#c0392b;color:#fff}
   #selBar button svg{width:14px;height:14px}
 
   /* "Select all" toolbar button */
@@ -315,7 +323,8 @@
   #copyMoveModal .foot button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   #copyMoveModal .foot button.primary:hover{background:#d06a1f;border-color:#d06a1f}
   #copyMoveModal .foot button.primary:disabled{opacity:.55;cursor:not-allowed}
-</style>
+
+  </style>
 </head>
 <body>
 <header>
@@ -326,7 +335,7 @@
       <circle class="dot" cx="17" cy="17" r="2.4"/>
     </svg>
     <span class="logo-text"><span class="logo-now">Now</span><span class="logo-cap">Captures</span></span>
-    <span class="ver">v3.0 · annotate v2</span>
+    <span class="ver">v3.3 · scroll-to-capture</span>
   </div>
   <div class="doc-title-wrap"><label for="docTitle">Report</label><input id="docTitle" value="Test Evidence Report" spellcheck="false" /></div>
   <div class="save-state" id="saveState"><span class="pip"></span><span id="saveText">Saved</span></div>
@@ -400,7 +409,7 @@
 
   <p class="hint">
     <b>Capture region</b> / <b>Capture full screen</b> (or press <kbd>R</kbd> / <kbd>F</kbd> while this tab is focused), then pick a screen <b>once</b> — after that you can keep capturing as many shots as you want without re-sharing.
-    Hit <b>Annotate</b> to draw arrows and boxes, set a <b>Pass / Fail / Blocked</b> status, and group shots into <b>test cases</b>. Export to Word or PDF. Everything auto-saves on your device — nothing is uploaded.
+    Hit <b>Annotate</b> to draw arrows and boxes, set a <b>Pass / Fail / Blocked</b> status, and group shots into <b>test cases</b>. Export to Word or PDF — <b>only shots assigned to a test case are included</b>. Everything auto-saves on your device — nothing is uploaded.
     <br><b>Live capture</b> keeps one screen pick open and gives you a floating <b>Capture</b> button you can drag onto any window or monitor — snap a shot at every step while you navigate the app, hands-free with auto-capture if you like. <i>(Floating window needs Chrome or Edge; works on http://localhost.)</i>
   </p>
 
@@ -417,6 +426,7 @@
     <span class="spacer"></span>
     <button class="primary" data-sb="copy" title="Copy the selected screenshots into one or more test cases (originals stay)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy to case…</button>
     <button data-sb="move" title="Move the selected screenshots into a single test case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Move to case…</button>
+    <button data-sb="delete" class="danger" title="Delete every selected screenshot (cannot be undone)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>Delete</button>
     <button data-sb="close" title="Close selection">✕</button>
   </div>
   <div id="shots" class="shots"></div>
@@ -682,6 +692,22 @@
   .cap-x:hover{background:#e02f2f}
   .cap-body{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1}
   .cap-shot{border:none;background:#e07a2f;color:#fff;font-size:15px;font-weight:700;padding:13px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(224,122,47,.35);transition:transform .06s,background .2s}
+  .cap-fpbtn{border:1px solid #d8d3c7;background:#fff;color:#14213d;font-size:12px;font-weight:700;padding:9px 12px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .12s;letter-spacing:.3px}
+  .cap-fpbtn:hover:not(:disabled){border-color:#e07a2f;color:#e07a2f}
+  .cap-fpbtn:disabled{opacity:.45;cursor:not-allowed}
+  .cap-fpbtn svg{width:15px;height:15px;stroke-width:2}
+  /* full-page recording state (panel transforms) */
+  .fp-rec-box{background:#fff5e6;border:2px solid #e07a2f;border-radius:11px;padding:13px;text-align:center}
+  .fp-rec-title{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:700;color:#7a4a18;letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px}
+  .fp-rec-dot{width:10px;height:10px;border-radius:50%;background:#e02f2f;animation:capPulse 1.2s infinite}
+  .fp-rec-count{font-size:26px;font-weight:800;color:#14213d;line-height:1.1;margin-bottom:2px}
+  .fp-rec-count b{color:#e07a2f}
+  .fp-rec-hint{font-size:11.5px;color:#7a4a18;font-style:italic;line-height:1.5;margin-bottom:12px}
+  .fp-rec-btns{display:flex;gap:8px}
+  .fp-rec-btns .stop{flex:1;border:none;background:#14213d;color:#fff;font-size:14px;font-weight:700;padding:12px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .fp-rec-btns .stop:hover{background:#0a1429}
+  .fp-rec-btns .cancel{border:1px solid #d8d3c7;background:#fff;color:#6b6557;font-size:12px;font-weight:600;padding:12px 14px;border-radius:9px;cursor:pointer}
+  .fp-rec-btns .cancel:hover{border-color:#c0392b;color:#c0392b}
   .cap-shot:hover{background:#d06a1f}
   .cap-shot:active{transform:scale(.97)}
   .cap-shot.flash{animation:capFlash .35s}
@@ -770,9 +796,15 @@
     else toast("Nothing captured yet — the source may still be starting.","err");
   }
   function setAuto(on){
+    if(on && fpRecording){
+      toast("Stop Full page recording first before turning on Auto.","err");
+      renderPanel();  // re-render to un-tick the checkbox
+      return;
+    }
     autoOn=on;
     if(autoTimer){ clearInterval(autoTimer); autoTimer=null; }
     if(on) autoTimer=setInterval(doCapture, Math.max(1,autoSecs)*1000);
+    if(panelEl) renderPanel();  // reflect autoOn state on the Full page button
   }
 
   /* panel UI — shared by the floating PiP window and the in-page fallback */
@@ -786,15 +818,31 @@
       <button class="cap-x" data-act="stop" title="End live capture">\u2715</button>
     </div>
     <div class="cap-body">
-      <button class="cap-shot" data-act="snap"><span class="cap-cam">\uD83D\uDCF8</span> Capture</button>
-      <div class="cap-count"><b id="capN">${liveCount}</b> captured this session</div>
-      ${sources.length>1?`<div class="cap-row"><span class="lbl">Target</span><select class="cap-sel" data-sel>${opts}${allOpt}</select></div>`:``}
-      <div class="cap-row">
-        <button class="cap-mini" data-act="add">\uFF0B Add screen</button>
-        <label class="cap-auto"><input type="checkbox" data-auto ${autoOn?"checked":""}/> Auto every <input type="number" class="cap-secs" data-secs min="1" max="120" value="${autoSecs}"/> s</label>
-      </div>
-      ${sources.length?`<div class="cap-tip">Drag this window over the app you're testing and click Capture at each step. Add another screen for a second monitor.</div>`
-                      :`<div class="cap-empty">No screen selected yet — click <b>\uFF0B Add screen</b> and choose the window or monitor you want to document.</div>`}
+      ${fpRecording ? `
+        <div class="fp-rec-box">
+          <div class="fp-rec-title"><span class="fp-rec-dot"></span> Recording full page</div>
+          <div class="fp-rec-count"><b id="fpFrameN">${fpFrames.length}</b> frame${fpFrames.length===1?"":"s"} captured</div>
+          <div class="fp-rec-hint">Scroll through your page from top to bottom.<br/>Frames are captured automatically as you scroll.</div>
+          <div class="fp-rec-btns">
+            <button class="stop" data-act="fullpage-stop">\u25A0 Stop &amp; save</button>
+            <button class="cancel" data-act="fullpage-cancel" title="Discard the recording">Cancel</button>
+          </div>
+        </div>
+      ` : `
+        <button class="cap-shot" data-act="snap"><span class="cap-cam">\uD83D\uDCF8</span> Capture</button>
+        <div class="cap-count"><b id="capN">${liveCount}</b> captured this session</div>
+        ${sources.length>1?`<div class="cap-row"><span class="lbl">Target</span><select class="cap-sel" data-sel>${opts}${allOpt}</select></div>`:``}
+        <div class="cap-row">
+          <button class="cap-mini" data-act="add">\uFF0B Add screen</button>
+          <label class="cap-auto"><input type="checkbox" data-auto ${autoOn?"checked":""}/> Auto every <input type="number" class="cap-secs" data-secs min="1" max="120" value="${autoSecs}"/> s</label>
+        </div>
+        <button class="cap-fpbtn" data-act="fullpage-start" ${(autoOn||!sources.length)?"disabled":""} title="${autoOn?"Turn off Auto capture to use Full page":(!sources.length?"Click + Add screen first":"Scroll through a page and the tool captures every stage automatically, then stitches into one tall screenshot")}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+          Full page ${autoOn?"(disabled while Auto is on)":(!sources.length?"(add a screen first)":"(scroll to capture)")}
+        </button>
+        ${sources.length?`<div class="cap-tip">Drag this window over the app you're testing and click Capture at each step. Add another screen for a second monitor.</div>`
+                        :`<div class="cap-empty">No screen selected yet — click <b>\uFF0B Add screen</b> and choose the window or monitor you want to document.</div>`}
+      `}
     </div>`;
   }
   function renderPanel(){ if(!panelEl) return; panelEl.innerHTML=panelInnerHTML(); wirePanel(); }
@@ -806,6 +854,9 @@
       if(a==="snap") doCapture();
       else if(a==="add") addSource();
       else if(a==="stop") stopLive();
+      else if(a==="fullpage-start")  startFpRecording();
+      else if(a==="fullpage-stop")   stopFpRecording(false);
+      else if(a==="fullpage-cancel") stopFpRecording(true);
     }));
     const selEl=panelEl.querySelector("[data-sel]"); if(selEl) selEl.addEventListener("change",e=>{ activeSrc=e.target.value; });
     const autoEl=panelEl.querySelector("[data-auto]"); if(autoEl) autoEl.addEventListener("change",e=>setAuto(e.target.checked));
@@ -876,6 +927,7 @@
   }
   function stopLive(){
     const wasActive=!!panelEl||sources.length>0;
+    if(fpRecording){ if(fpSampleTimer){ clearInterval(fpSampleTimer); fpSampleTimer=null; } fpRecording=false; fpFrames=[]; fpLastKept=null; fpCurSource=null; }
     if(autoTimer){ clearInterval(autoTimer); autoTimer=null; } autoOn=false;
     sources.forEach(s=>{ try{ s.stream.getTracks().forEach(t=>t.stop()); }catch(_){} if(s.video){ s.video.srcObject=null; s.video.remove(); } });
     sources=[]; activeSrc="all"; liveCount=0;
@@ -970,6 +1022,229 @@
     mediaRec=null; clipSource=null;
   }
   if(clipBtn) clipBtn.addEventListener("click",toggleClip);
+
+  /* ====== full-page (scroll-to-capture) recording ====== */
+  // While recording, we sample the shared video every ~400ms. We keep a frame
+  // only if it's meaningfully different from the last one we kept — so the user
+  // gets one clean frame per scroll position, no duplicates. On Stop, we stitch
+  // all kept frames with overlap detection.
+  let fpRecording = false;
+  let fpFrames = [];       // canvases kept during recording
+  let fpLastKept = null;   // most recent kept canvas (for change detection)
+  let fpSampleTimer = null;
+
+  // Cheap sameness check: sample a middle strip of both canvases, average
+  // per-channel pixel difference. Returns true if they differ enough that
+  // the user probably scrolled or the page changed.
+  function framesDifferEnough(prev, next){
+    if(!prev) return true;
+    if(prev.width !== next.width || prev.height !== next.height) return true;
+    const w = prev.width;
+    const stripY = Math.floor(prev.height * 0.30);
+    const stripH = Math.min(120, Math.floor(prev.height * 0.4));
+    const stepX = Math.max(4, Math.floor(w/240));
+    const pctx = prev.getContext("2d"), nctx = next.getContext("2d");
+    let prevData, nextData;
+    try{
+      prevData = pctx.getImageData(0, stripY, w, stripH).data;
+      nextData = nctx.getImageData(0, stripY, w, stripH).data;
+    } catch(e){ return true; }
+    let sum=0, count=0;
+    for(let dy=0; dy<stripH; dy+=2){
+      for(let x=0; x<w; x+=stepX){
+        const idx = (dy*w + x)*4;
+        sum += Math.abs(prevData[idx]   - nextData[idx])
+             + Math.abs(prevData[idx+1] - nextData[idx+1])
+             + Math.abs(prevData[idx+2] - nextData[idx+2]);
+        count++;
+      }
+    }
+    return (sum/count) > 5;    // empirically ~1 for identical, ~10+ for scroll
+  }
+
+  function updateFpFrameCount(){
+    if(!panelEl) return;
+    const el = panelEl.querySelector("#fpFrameN");
+    if(el) el.textContent = fpFrames.length;
+  }
+
+  // Which Live Capture source we're currently sampling from (a specific screen the user added)
+  let fpCurSource = null;
+
+  function startFpRecording(){
+    // Use the same source the big Capture button uses
+    const targets = targetsForCapture();
+    if(!targets.length){
+      toast("Add a screen first \u2014 click \u201C\uFF0B Add screen\u201D.","err");
+      return;
+    }
+    // Full-page only makes sense with a single source (one page, one scroll)
+    // If the user has "All sources" selected with multiple screens, use the first one.
+    const src = targets[0];
+    if(!src || !src.video || !src.video.videoWidth){
+      toast("Capture source not ready yet \u2014 wait a moment and try again.","err");
+      return;
+    }
+    if(autoOn) setAuto(false);   // guard: Auto conflicts with full-page recording
+    fpCurSource = src;
+    fpRecording = true;
+    fpFrames = [];
+    fpLastKept = null;
+    // Capture the first frame immediately
+    const first = snapVideo(src.video);
+    if(first){ fpFrames.push(first); fpLastKept = first; }
+    // Poll every 400ms
+    fpSampleTimer = setInterval(()=>{
+      if(!fpCurSource || !fpCurSource.stream || !fpCurSource.stream.active
+         || !fpCurSource.track || fpCurSource.track.readyState!=="live"){
+        stopFpRecording(true);
+        toast("The screen sharing ended \u2014 full-page recording stopped.","err");
+        return;
+      }
+      const c = snapVideo(fpCurSource.video);
+      if(!c) return;
+      if(framesDifferEnough(fpLastKept, c)){
+        fpFrames.push(c);
+        fpLastKept = c;
+        updateFpFrameCount();
+      }
+    }, 400);
+    renderPanel();
+    const label = targets.length>1
+      ? `Recording "${src.label}" \u2014 scroll through the page from top to bottom.`
+      : `Recording \u2014 scroll through your page from top to bottom.`;
+    toast(label,"ok");
+  }
+
+  async function stopFpRecording(cancelled){
+    fpRecording = false;
+    fpCurSource = null;
+    if(fpSampleTimer){ clearInterval(fpSampleTimer); fpSampleTimer = null; }
+    const frames = fpFrames.slice();
+    fpFrames = [];
+    fpLastKept = null;
+    if(cancelled){
+      renderPanel();
+      toast("Full-page capture cancelled","");
+      return;
+    }
+    if(frames.length < 2){
+      renderPanel();
+      toast("Not enough frames captured. Scroll more between clicks and try again.","err");
+      return;
+    }
+    // Give the UI a beat to switch back to the normal panel state before stitching
+    renderPanel();
+    await new Promise(r=>setTimeout(r,20));
+    const stitched = stitchFrames(frames);
+    if(!stitched){ return; }
+    const dataUrl = stitched.toDataURL("image/png");
+    const s = addShot(dataUrl);
+    if(s){ s.step = `Full-page capture (${frames.length} frames stitched)`; }
+    toast(`Full-page shot saved \u2014 ${stitched.width}\u00D7${stitched.height}`,"ok");
+    scheduleSave(); render();
+  }
+
+  // -- Stitching helpers (extracted so they take an explicit frames array) --
+  function stripDiff(prevData, nextData, w, prevStartY, nextStartY, stripH, stepX){
+    let sum = 0, count = 0;
+    for(let dy=0; dy<stripH; dy++){
+      const py = prevStartY + dy, ny = nextStartY + dy;
+      for(let x=0; x<w; x+=stepX){
+        const pi = (py*w + x)*4;
+        const ni = (ny*w + x)*4;
+        sum += Math.abs(prevData[pi]   - nextData[ni])
+             + Math.abs(prevData[pi+1] - nextData[ni+1])
+             + Math.abs(prevData[pi+2] - nextData[ni+2]);
+        count++;
+      }
+    }
+    return count>0 ? sum/count : Infinity;
+  }
+  function findOverlap(prevCanvas, nextCanvas){
+    if(prevCanvas.width !== nextCanvas.width) return 0;
+    const w = prevCanvas.width;
+    const stripH = Math.min(80, Math.floor(prevCanvas.height/6), Math.floor(nextCanvas.height/6));
+    if(stripH < 10) return 0;
+    const prevCtx = prevCanvas.getContext("2d");
+    const nextCtx = nextCanvas.getContext("2d");
+    let prevBottom, searchTop;
+    try{
+      prevBottom = prevCtx.getImageData(0, prevCanvas.height - stripH, w, stripH).data;
+      const searchH = Math.min(Math.floor(nextCanvas.height*0.85), 1400);
+      searchTop = nextCtx.getImageData(0, 0, w, searchH).data;
+      var effSearchH = searchH;
+    } catch(e){ return 0; }
+    const stepX = Math.max(4, Math.floor(w/240));
+    let bestY = 0, bestScore = Infinity;
+    const maxY = effSearchH - stripH;
+    // Coarse pass every 4 rows
+    for(let y=0; y<=maxY; y+=4){
+      let sum=0, count=0;
+      for(let dy=0; dy<stripH; dy+=2){
+        for(let x=0; x<w; x+=stepX){
+          const pi = (dy*w + x)*4;
+          const ni = ((y+dy)*w + x)*4;
+          sum += Math.abs(prevBottom[pi]   - searchTop[ni])
+               + Math.abs(prevBottom[pi+1] - searchTop[ni+1])
+               + Math.abs(prevBottom[pi+2] - searchTop[ni+2]);
+          count++;
+        }
+      }
+      const avg = sum/count;
+      if(avg < bestScore){ bestScore = avg; bestY = y; }
+    }
+    // Fine pass around best match
+    const lo = Math.max(0, bestY-4), hi = Math.min(maxY, bestY+4);
+    for(let y=lo; y<=hi; y++){
+      let sum=0, count=0;
+      for(let dy=0; dy<stripH; dy++){
+        for(let x=0; x<w; x+=stepX){
+          const pi = (dy*w + x)*4;
+          const ni = ((y+dy)*w + x)*4;
+          sum += Math.abs(prevBottom[pi]   - searchTop[ni])
+               + Math.abs(prevBottom[pi+1] - searchTop[ni+1])
+               + Math.abs(prevBottom[pi+2] - searchTop[ni+2]);
+          count++;
+        }
+      }
+      const avg = sum/count;
+      if(avg < bestScore){ bestScore = avg; bestY = y; }
+    }
+    if(bestScore > 30) return 0;
+    return bestY + stripH;
+  }
+  function stitchFrames(frames){
+    if(frames.length < 2) return null;
+    const w = frames[0].width;
+    for(const c of frames){
+      if(c.width !== w){
+        toast("Frames have different widths \u2014 don't resize the window while recording.","err");
+        return null;
+      }
+    }
+    const overlaps = [0];
+    for(let i=1;i<frames.length;i++){
+      overlaps.push(findOverlap(frames[i-1], frames[i]));
+    }
+    let totalH = 0;
+    for(let i=0;i<frames.length;i++) totalH += frames[i].height - overlaps[i];
+    if(totalH > 32000){
+      toast(`Stitched image is very tall (${totalH}px) \u2014 some browsers may struggle.`,"err");
+    }
+    const out = document.createElement("canvas");
+    out.width = w; out.height = totalH;
+    const ctx = out.getContext("2d");
+    let y = 0;
+    for(let i=0;i<frames.length;i++){
+      const c = frames[i];
+      const skip = overlaps[i];
+      const drawH = c.height - skip;
+      ctx.drawImage(c, 0, skip, w, drawH, 0, y, w, drawH);
+      y += drawH;
+    }
+    return out;
+  }
 
   /* ====== status filter for export ====== */
   const exportFilterEl=$("#exportFilter");
@@ -1389,10 +1664,25 @@
   let cmMoveTargetId = null;      // single target for move mode
 
   function selectionCount(){ return selected.size; }
+  // Remove any selection ids that no longer point at a real shot.
+  function pruneSelection(){
+    if(!selected.size) return;
+    if(!shots.length){ selected.clear(); return; }
+    const valid = new Set(shots.map(s=>s.id));
+    for(const id of Array.from(selected)) if(!valid.has(id)) selected.delete(id);
+  }
   function updateSelectionUI(){
+    // Always prune first so the bar can NEVER show a stale count.
+    pruneSelection();
     const n = selectionCount();
-    selBar.classList.toggle("show", n>0);
-    if(n>0) selCountEl.textContent = `${n} selected`;
+    // Hide the bar completely when there is nothing valid to act on.
+    if(n===0 || shots.length===0){
+      selBar.classList.remove("show");
+      selCountEl.textContent = "0 selected";
+    } else {
+      selBar.classList.add("show");
+      selCountEl.textContent = `${n} selected`;
+    }
     if(btnSelectAll){
       const allOn = shots.length>0 && n===shots.length;
       btnSelectAll.classList.toggle("on", allOn);
@@ -1403,23 +1693,46 @@
   }
   function toggleSelectShot(id){
     if(selected.has(id)) selected.delete(id); else selected.add(id);
-    // pruning stale ids (safety)
-    const valid = new Set(shots.map(s=>s.id));
-    for(const id of Array.from(selected)) if(!valid.has(id)) selected.delete(id);
+    pruneSelection();
     render();
   }
   function selectAllShots(){ shots.forEach(s=>selected.add(s.id)); render(); }
-  function clearSelection(){ selected.clear(); render(); }
+  function clearSelection(){
+    selected.clear();
+    // Hide the bar immediately, even before render, so the user gets instant feedback
+    // — this also protects the X button from any downstream render errors.
+    selBar.classList.remove("show");
+    selCountEl.textContent = "0 selected";
+    render();
+  }
 
-  // Selection bar buttons
+  function deleteSelectedShots(){
+    if(!selected.size) return;
+    const ids = Array.from(selected);
+    const n = ids.length;
+    if(!confirm(`Delete ${n} screenshot${n===1?"":"s"}? This cannot be undone.`)) return;
+    const idSet = new Set(ids);
+    shots = shots.filter(s => !idSet.has(s.id));
+    selected.clear();
+    // hide ribbon immediately even before render
+    selBar.classList.remove("show");
+    selCountEl.textContent = "0 selected";
+    render(); scheduleSave();
+    toast(`Deleted ${n} screenshot${n===1?"":"s"}`,"ok");
+  }
+
+  // Selection bar buttons — every click routes through clearSelection or the
+  // action openers; both do a full state reset so nothing gets stuck.
   selBar.addEventListener("click", e=>{
     const b=e.target.closest("[data-sb]"); if(!b) return;
+    e.stopPropagation();
     const a=b.dataset.sb;
     if(a==="all")   selectAllShots();
     else if(a==="none")  clearSelection();
     else if(a==="close") clearSelection();
     else if(a==="copy")  openCopyMove("copy");
     else if(a==="move")  openCopyMove("move");
+    else if(a==="delete") deleteSelectedShots();
   });
   if(btnSelectAll) btnSelectAll.addEventListener("click", ()=>{
     if(selected.size===shots.length && shots.length>0) clearSelection();
@@ -1654,9 +1967,7 @@
     emptyEl.style.display=has?"none":"block";
     exportBtn.disabled=!has; exportPdfBtn.disabled=!has; resetBtn.disabled=!has;
     if(btnSelectAll) btnSelectAll.disabled=!has;
-    // prune selection to only valid shot ids (protects against deletes)
-    const validIds = new Set(shots.map(s=>s.id));
-    for(const id of Array.from(selected)) if(!validIds.has(id)) selected.delete(id);
+    pruneSelection();   // single source of truth for "what counts as selected"
     $("#caseBar").style.display=has?"flex":"none";
     renderSummary();
     shotsEl.innerHTML="";
@@ -1683,6 +1994,16 @@
         `<button class="del-case" data-del-case="${g.id}" title="Delete this test case and all screenshots in it (cannot be undone)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>`;
       const includeToggle = g.id==null ? "" :
         `<label class="case-include ${!isExcluded?"on":""}" title="Tick to include this case in Export Word / Export PDF. Untick to leave it out of the next report."><input type="checkbox" data-case-include="${g.id}" ${!isExcluded?"checked":""}/><span>${isExcluded?"Excluded":"Include"}</span></label>`;
+      // Per-case Select-all button: tri-state — all/some/none of THIS group is selected
+      const groupIds = g.items.map(s=>s.id);
+      const selectedInGroup = groupIds.filter(id=>selected.has(id)).length;
+      const allSelected = groupIds.length>0 && selectedInGroup===groupIds.length;
+      const someSelected = selectedInGroup>0 && !allSelected;
+      const selectAllBtn = g.items.length===0 ? "" :
+        `<button class="case-selectall${allSelected?" on":someSelected?" some":""}" data-case-selectall="${g.id==null?"__ungrouped__":g.id}" title="${allSelected?"Deselect all screenshots in this case":"Select every screenshot in this case"}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${allSelected?'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8"/>':'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'}</svg>
+          ${allSelected?"Deselect all":(someSelected?`${selectedInGroup} of ${groupIds.length} · Select all`:"Select all")}
+        </button>`;
       wrap.innerHTML=`
         <div class="group-head" data-toggle="${g.id==null?"":g.id}">
           <svg class="caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -1694,6 +2015,7 @@
             <span class="chip blocked ${c.blocked?"show":""}">${c.blocked} B</span>
             <span class="chip untested ${c.untested?"show":""}">${c.untested} U</span>
           </span>
+          ${selectAllBtn}
           ${includeToggle}
           ${delBtn}
         </div>
@@ -1732,10 +2054,28 @@
     if(sel){ e.stopPropagation(); e.preventDefault();
       const id=+sel.dataset.sel; toggleSelectShot(id); return;
     }
+    // per-case Select all / Deselect all (works for Ungrouped too)
+    const csa = e.target.closest("[data-case-selectall]");
+    if(csa){ e.stopPropagation(); e.preventDefault();
+      const raw = csa.dataset.caseSelectall;
+      const caseId = raw==="__ungrouped__" ? null : +raw;
+      const groupShots = shots.filter(s=>s.caseId===caseId);
+      const groupIds = groupShots.map(s=>s.id);
+      const allInGroupSelected = groupIds.length>0 && groupIds.every(id=>selected.has(id));
+      if(allInGroupSelected){
+        // Deselect all in this group only (leave other selections alone)
+        groupIds.forEach(id=>selected.delete(id));
+      } else {
+        // Select all in this group (add to any existing selection)
+        groupIds.forEach(id=>selected.add(id));
+      }
+      render();
+      return;
+    }
     // clicks inside the include toggle (label/input/span) must not collapse the case
     if(e.target.closest(".case-include")) { e.stopPropagation(); return; }
     const head=e.target.closest(".group-head");
-    if(head && !e.target.closest(".case-name") && !e.target.closest(".del-case") && !e.target.closest(".case-include")){
+    if(head && !e.target.closest(".case-name") && !e.target.closest(".del-case") && !e.target.closest(".case-include") && !e.target.closest(".case-selectall")){
       const gid=head.dataset.toggle; if(gid!==""){ const c=cases.find(x=>x.id===+gid); if(c){ c.collapsed=!c.collapsed; head.parentElement.classList.toggle("collapsed"); scheduleSave(); } }
       return;
     }
@@ -1892,19 +2232,22 @@
       await ensureExportLibsReady(false);
       const baseTitle=$("#docTitle").value.trim()||"Test Evidence Report";
       const fl=filterLabel(); const title = fl ? `${baseTitle} (${fl})` : baseTitle;
-      let groupsForExport=buildGroups().filter(g => !(g.id!=null && g.excluded));
+      let groupsForExport=buildGroups().filter(g => g.id!=null && !g.excluded);
       groupsForExport=applyStatusFilterToGroups(groupsForExport);
       const totalShots=groupsForExport.reduce((n,g)=>n+g.items.length,0);
+      const ungroupedCount=shots.filter(s=>s.caseId==null).length;
       if(!totalShots){
         const excluded=cases.filter(c=>c.excluded).length;
-        if(fl) throw new Error(`No screenshots match the filter "${fl}". Change the Include dropdown or status of some shots.`);
-        throw new Error(excluded?`All ${excluded} test case(s) are excluded — tick at least one "Include" to export.`:"No screenshots to export.");
+        if(fl) throw new Error(`No screenshots match the filter "${fl}" in any test case. (${ungroupedCount} Ungrouped shot${ungroupedCount===1?"":"s"} are excluded from exports.)`);
+        if(cases.length===0 && ungroupedCount>0) throw new Error(`All ${ungroupedCount} screenshot${ungroupedCount===1?" is":"s are"} Ungrouped. Ungrouped shots are not included in exports — create a test case and assign shots to it first.`);
+        if(excluded && excluded===cases.length) throw new Error(`All ${excluded} test case${excluded===1?" is":"s are"} excluded — tick at least one "Include" to export.`);
+        throw new Error("No test-case screenshots to export.");
       }
       const blob=await buildWordBlob(groupsForExport, title, true);
       const fileBase=safeFileName(baseTitle)+(fl?"_"+safeFileName(fl):"");
       saveAs(blob, `${fileBase}.docx`);
       const excludedCount=cases.filter(c=>c.excluded).length;
-      const parts=[]; if(fl) parts.push(`filter: ${fl}`); if(excludedCount) parts.push(`${excludedCount} excluded case${excludedCount===1?"":"s"} skipped`);
+      const parts=[]; if(fl) parts.push(`filter: ${fl}`); if(excludedCount) parts.push(`${excludedCount} excluded case${excludedCount===1?"":"s"} skipped`); if(ungroupedCount) parts.push(`${ungroupedCount} Ungrouped skipped`);
       toast(parts.length?`Word document downloaded (${parts.join(", ")})`:"Word document downloaded","ok");
     }catch(err){ console.error(err); toast("Export failed: "+(err.message||err),"err"); }
     finally{ exportBtn.innerHTML=prev; exportBtn.disabled=shots.length===0; }
@@ -1972,19 +2315,22 @@
       await ensureExportLibsReady(true);
       const baseTitle=$("#docTitle").value.trim()||"Test Evidence Report";
       const fl=filterLabel(); const title = fl ? `${baseTitle} (${fl})` : baseTitle;
-      let groupsForExport=buildGroups().filter(g => !(g.id!=null && g.excluded));
+      let groupsForExport=buildGroups().filter(g => g.id!=null && !g.excluded);
       groupsForExport=applyStatusFilterToGroups(groupsForExport);
       const totalShots=groupsForExport.reduce((n,g)=>n+g.items.length,0);
+      const ungroupedCount=shots.filter(s=>s.caseId==null).length;
       if(!totalShots){
         const excluded=cases.filter(c=>c.excluded).length;
-        if(fl) throw new Error(`No screenshots match the filter "${fl}". Change the Include dropdown or status of some shots.`);
-        throw new Error(excluded?`All ${excluded} test case(s) are excluded — tick at least one "Include" to export.`:"No screenshots to export.");
+        if(fl) throw new Error(`No screenshots match the filter "${fl}" in any test case. (${ungroupedCount} Ungrouped shot${ungroupedCount===1?"":"s"} are excluded from exports.)`);
+        if(cases.length===0 && ungroupedCount>0) throw new Error(`All ${ungroupedCount} screenshot${ungroupedCount===1?" is":"s are"} Ungrouped. Ungrouped shots are not included in exports — create a test case and assign shots to it first.`);
+        if(excluded && excluded===cases.length) throw new Error(`All ${excluded} test case${excluded===1?" is":"s are"} excluded — tick at least one "Include" to export.`);
+        throw new Error("No test-case screenshots to export.");
       }
       const bytes=await buildPdfBytes(groupsForExport, title);
       const fileBase=safeFileName(baseTitle)+(fl?"_"+safeFileName(fl):"");
       saveAs(new Blob([bytes],{type:"application/pdf"}), `${fileBase}.pdf`);
       const excludedCount=cases.filter(c=>c.excluded).length;
-      const parts=[]; if(fl) parts.push(`filter: ${fl}`); if(excludedCount) parts.push(`${excludedCount} excluded case${excludedCount===1?"":"s"} skipped`);
+      const parts=[]; if(fl) parts.push(`filter: ${fl}`); if(excludedCount) parts.push(`${excludedCount} excluded case${excludedCount===1?"":"s"} skipped`); if(ungroupedCount) parts.push(`${ungroupedCount} Ungrouped skipped`);
       toast(parts.length?`PDF downloaded (${parts.join(", ")})`:"PDF downloaded","ok");
     }catch(err){ console.error(err); toast("PDF export failed: "+(err.message||err),"err"); }
     finally{ exportPdfBtn.innerHTML=prev; exportPdfBtn.disabled=shots.length===0; }
