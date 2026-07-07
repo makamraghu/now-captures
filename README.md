@@ -4,7 +4,7 @@
 
 A single-file, browser-based tool for QA testers to capture, annotate, organize, and export test evidence as polished Word (`.docx`) and PDF reports. No install, no accounts, no cloud — everything runs in your browser and stays on your machine.
 
-> **Try it live:** _(GitHub Pages URL — fill in after publishing)_
+> **Try it live:** https://makamraghu.github.io/now-captures/
 
 ---
 
