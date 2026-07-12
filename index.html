@@ -110,10 +110,10 @@
 
   .shots{display:flex;flex-direction:column;gap:18px}
   .card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:300px 1fr}
-  .card .thumb{position:relative;background:#11161f;display:flex;align-items:center;justify-content:center;min-height:180px}
-  .card .thumb img{width:100%;height:100%;object-fit:contain;max-height:260px;display:block}
-  .card .idx{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:12px;font-weight:600;background:var(--accent);color:#fff;border-radius:7px;padding:3px 9px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
-  .card .thumb-actions{position:absolute;bottom:10px;right:10px;display:flex;gap:6px}
+  .card .thumb{position:relative;background:#11161f;align-self:start;overflow:hidden}
+  .card .thumb img{display:block;width:100%;height:auto;max-height:340px;object-fit:contain}
+  .card .idx{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:12px;font-weight:600;background:var(--accent);color:#fff;border-radius:7px;padding:3px 9px;box-shadow:0 2px 6px rgba(0,0,0,.25);z-index:3}
+  .card .thumb-actions{position:absolute;bottom:10px;right:10px;display:flex;gap:6px;z-index:3}
   .thumb-btn{border:none;background:rgba(17,22,31,.78);color:#fff;border-radius:7px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;backdrop-filter:blur(4px)}
   .thumb-btn:hover{background:var(--accent)}
   .thumb-btn svg{width:13px;height:13px}
@@ -154,6 +154,10 @@
   #annotCanvas.tool-select{cursor:default}
   #annotCanvas.tool-select.hover-shape{cursor:move}
   #annotCanvas.tool-select.dragging{cursor:grabbing}
+  #annotCanvas.tool-text{cursor:text}
+  /* Inline text editor that appears over the annotation canvas while typing */
+  #annotTextInput{position:absolute;background:rgba(255,255,255,.98);border:2px solid var(--accent);border-radius:6px;padding:4px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:600;box-shadow:0 4px 14px rgba(20,33,61,.25);outline:none;min-width:120px;max-width:70vw;z-index:110;line-height:1.15}
+  #annotTextInput::placeholder{color:#b6b0a1;font-weight:500}
   .overlay .bar{padding:12px 18px;background:#11161f;color:#fff;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid #2a3140}
   .overlay .bar .label{font-size:13px;color:#a9b0bd;flex:1;min-width:120px}
   .overlay .bar .label b{color:#fff}
@@ -165,6 +169,11 @@
   .swatches{display:inline-flex;gap:6px}
   .swatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer}
   .swatch.on{border-color:#fff;box-shadow:0 0 0 2px #11161f,0 0 0 4px rgba(255,255,255,.4)}
+  .width-seg{display:inline-flex;border:1px solid #2a3140;border-radius:8px;overflow:hidden;margin-left:4px}
+  .width-seg button{border:none;background:#1b2230;color:#a9b0bd;padding:6px 10px;cursor:pointer;border-right:1px solid #2a3140;font-family:var(--sans);font-size:12px;font-weight:700;min-width:26px}
+  .width-seg button:last-child{border-right:none}
+  .width-seg button.on{background:var(--accent);color:#fff}
+  .width-seg button:hover:not(.on){background:#252c3c}
 
   #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:400;transition:transform .3s cubic-bezier(.2,.9,.3,1);max-width:90vw;text-align:center}
   #toast.show{transform:translateX(-50%) translateY(0)}
@@ -229,6 +238,102 @@
   #shareStatus .ss-btn.primary{background:#14213d;color:#fff;border-color:#14213d}
   #shareStatus .ss-btn.primary:hover{background:#0a1429}
   #shareStatus .ss-btn.stop:hover{background:#c0392b;border-color:#c0392b;color:#fff}
+
+  /* subtle bottom-left credit */
+  #creditFooter{position:fixed;bottom:10px;left:14px;font-family:var(--mono);font-size:11px;color:var(--muted);opacity:.7;letter-spacing:.2px;z-index:10;pointer-events:none;user-select:none;transition:opacity .2s}
+  #creditFooter b{color:var(--ink);font-weight:600}
+  #creditFooter:hover{opacity:1}
+
+  /* ---- Compliance metadata panel ---- */
+  #metaPanel{margin:12px 0 16px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+  #metaPanel .mp-head{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none;background:var(--paper);border-bottom:1px solid var(--line)}
+  #metaPanel.collapsed .mp-head{border-bottom:0}
+  #metaPanel .mp-head:hover{background:#f3ede0}
+  #metaPanel .mp-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.3px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+  #metaPanel .mp-title svg{width:15px;height:15px;color:var(--accent)}
+  #metaPanel .mp-sub{font-size:12px;color:var(--muted);flex:1;font-style:italic}
+  #metaPanel .mp-caret{transition:transform .15s}
+  #metaPanel.collapsed .mp-caret{transform:rotate(-90deg)}
+  #metaPanel .mp-body{padding:14px 16px}
+  #metaPanel.collapsed .mp-body{display:none}
+  #metaPanel .mp-format{display:flex;gap:6px;background:var(--paper);padding:3px;border-radius:8px;font-family:var(--sans);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border:1px solid var(--line)}
+  #metaPanel .mp-format button{background:transparent;border:none;color:var(--muted);padding:6px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:inherit;text-transform:inherit}
+  #metaPanel .mp-format button.on{background:var(--ink);color:#fff}
+  #metaPanel .mp-format button:hover:not(.on){color:var(--ink)}
+  #metaPanel .mp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 14px}
+  #metaPanel .mp-field{display:flex;flex-direction:column;gap:4px}
+  #metaPanel .mp-field label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+  #metaPanel .mp-field input, #metaPanel .mp-field textarea{font-family:var(--sans);font-size:13px;color:var(--ink);padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff}
+  #metaPanel .mp-field input:focus, #metaPanel .mp-field textarea:focus{outline:none;border-color:var(--accent)}
+  #metaPanel .mp-field textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
+  #metaPanel .mp-notes{grid-column:1/-1}
+  #metaPanel .mp-env{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);font-size:12px;color:var(--muted)}
+  #metaPanel .mp-env b{color:var(--ink);font-weight:600}
+  #metaPanel .mp-env span+span{margin-left:14px}
+
+  /* ---- Compliance per-shot fields ---- */
+  .card .compliance-fields{margin-top:8px;display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:#faf7f2;border:1px solid var(--line);border-radius:8px}
+  .card .compliance-fields .cf-row{display:flex;align-items:flex-start;gap:8px}
+  .card .compliance-fields .cf-label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;flex:none;width:70px;padding-top:6px}
+  .card .compliance-fields input, .card .compliance-fields textarea{flex:1;font-family:var(--sans);font-size:12.5px;color:var(--ink);padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;line-height:1.4}
+  .card .compliance-fields input:focus, .card .compliance-fields textarea:focus{outline:none;border-color:var(--accent)}
+  .card .compliance-fields textarea{resize:vertical;min-height:32px;max-height:120px}
+  .card .compliance-fields .bug-link{font-size:10.5px;color:var(--accent);text-decoration:underline;padding-top:6px}
+
+  /* ---- Test case ID (compliance) ---- */
+  .group-head .case-tcid{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 8px;font-family:var(--mono);font-size:11px;color:var(--ink);width:100px;font-weight:600;letter-spacing:.3px}
+  .group-head .case-tcid:focus{outline:none;border-color:var(--accent)}
+  .group-head .case-tcid::placeholder{color:#c3bfb2}
+
+  /* ---- Search box (filters shots by text) ---- */
+  .search-wrap{position:relative;display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:2px 8px;height:32px;min-width:180px;max-width:260px}
+  .search-wrap:focus-within{border-color:var(--accent)}
+  .search-wrap svg{width:14px;height:14px;color:var(--muted);flex:none}
+  .search-wrap input{border:0;outline:0;background:transparent;font-family:var(--sans);font-size:12.5px;color:var(--ink);flex:1;min-width:0;padding:2px 0}
+  .search-wrap input::placeholder{color:#b6b0a1}
+  .search-wrap .search-clear{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px 4px;line-height:1;font-size:14px;display:none}
+  .search-wrap.has-value .search-clear{display:inline}
+  .search-count{font-size:11px;color:var(--muted);font-weight:600;padding:0 4px;white-space:nowrap}
+  #searchStatus{display:none;padding:8px 14px;margin:-8px 0 10px;background:#fff7ee;border:1px solid var(--accent);border-radius:8px;font-size:12.5px;color:var(--ink)}
+  #searchStatus.show{display:flex;align-items:center;gap:8px}
+  #searchStatus b{color:var(--accent)}
+  #searchStatus button{margin-left:auto;border:1px solid var(--line);background:#fff;font-family:var(--sans);font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;color:var(--ink)}
+
+  /* ---- Cards hidden by search filter ---- */
+  .card.filtered{display:none}
+  .group.filtered-out .group-body{display:none}
+  .group.filtered-out .group-head{opacity:.4}
+  .group-head .filter-hint{font-size:10.5px;color:var(--muted);font-style:italic;margin-left:8px}
+
+  /* ---- Drag-to-reorder ---- */
+  .card{transition:transform .08s, opacity .12s}
+  .card .idx{cursor:grab;user-select:none}
+  .card .idx:active{cursor:grabbing}
+  .card.dragging{opacity:.35;transform:scale(.98)}
+  .card.drop-before{box-shadow:-3px 0 0 var(--accent), inset 3px 0 0 var(--accent)}
+  .card.drop-after {box-shadow: 3px 0 0 var(--accent), inset -3px 0 0 var(--accent)}
+  .group-body.drop-target{background:#fff7ee;border-radius:8px;transition:background .15s}
+  .card .idx[title]{position:relative}
+  .card .idx::after{content:"\21F5";font-size:9px;opacity:0;margin-left:4px;transition:opacity .15s}
+  .card:hover .idx::after{opacity:.6}
+
+  /* ---- Keyboard shortcut cheat sheet ---- */
+  #kbdBtn{background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--muted);cursor:pointer;width:24px;height:24px;font-family:var(--mono);font-size:11px;font-weight:700;padding:0;display:inline-flex;align-items:center;justify-content:center;margin-left:6px}
+  #kbdBtn:hover{color:var(--ink);border-color:var(--ink)}
+  #kbdSheet{display:none;position:fixed;bottom:16px;right:16px;background:#14213D;color:#fff;padding:14px 18px 12px;border-radius:12px;font-family:var(--sans);font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.28);z-index:200;max-width:280px}
+  #kbdSheet.show{display:block}
+  #kbdSheet h4{margin:0 0 8px;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#CADCFC;font-weight:700}
+  #kbdSheet dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center}
+  #kbdSheet kbd{background:#1F3A6E;color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;min-width:14px;text-align:center;display:inline-block}
+  #kbdSheet dd{margin:0;color:#CADCFC;font-size:11.5px}
+  #kbdSheet .close{position:absolute;top:6px;right:8px;background:transparent;border:0;color:#7F8AAB;cursor:pointer;font-size:14px;padding:2px 6px}
+  #kbdSheet .close:hover{color:#fff}
+  #kbdSheet .tip{margin-top:8px;font-size:10.5px;color:#7F8AAB;font-style:italic}
+
+  /* ---- Card highlight when it becomes the "active shot" ---- */
+  .card.last-active .thumb{outline:2px solid var(--accent);outline-offset:-2px}
+
+
 
   /* clip recording state */
   .btn.rec-on{background:#e02f2f;border-color:#e02f2f;color:#fff;animation:recPulse 1.6s infinite}
@@ -335,13 +440,61 @@
       <circle class="dot" cx="17" cy="17" r="2.4"/>
     </svg>
     <span class="logo-text"><span class="logo-now">Now</span><span class="logo-cap">Captures</span></span>
-    <span class="ver">v3.3 · scroll-to-capture</span>
+    <span class="ver">v4.2 · thumb layout fix</span>
   </div>
   <div class="doc-title-wrap"><label for="docTitle">Report</label><input id="docTitle" value="Test Evidence Report" spellcheck="false" /></div>
   <div class="save-state" id="saveState"><span class="pip"></span><span id="saveText">Saved</span></div>
 </header>
 
 <main>
+  <div id="metaPanel" class="collapsed">
+    <div class="mp-head" id="mpToggle">
+      <span class="mp-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6"/></svg>Report metadata</span>
+      <span class="mp-sub" id="mpSummary">Tester, environment, format — click to edit</span>
+      <span class="mp-caret"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+    </div>
+    <div class="mp-body">
+      <div class="mp-grid">
+        <div class="mp-field">
+          <label for="metaTester">Tester name</label>
+          <input id="metaTester" placeholder="Your name (appears in report)" maxlength="120" />
+        </div>
+        <div class="mp-field">
+          <label for="metaDate">Testing date</label>
+          <input id="metaDate" type="date" />
+        </div>
+        <div class="mp-field">
+          <label for="metaUrl">URL under test</label>
+          <input id="metaUrl" placeholder="e.g. https://app.example.com/quotes" maxlength="500" />
+        </div>
+        <div class="mp-field">
+          <label for="metaBuild">Application / build version</label>
+          <input id="metaBuild" placeholder="e.g. 2026.07 build 1284" maxlength="200" />
+        </div>
+        <div class="mp-field">
+          <label for="metaProtocol">Test protocol / reference</label>
+          <input id="metaProtocol" placeholder="e.g. VVP-2026-014 (optional)" maxlength="200" />
+        </div>
+        <div class="mp-field">
+          <label for="metaApprover">Approver / reviewer</label>
+          <input id="metaApprover" placeholder="Name (optional)" maxlength="120" />
+        </div>
+        <div class="mp-field mp-notes">
+          <label for="metaNotes">Environment notes</label>
+          <textarea id="metaNotes" placeholder="Any additional environment / setup context (optional)" maxlength="2000"></textarea>
+        </div>
+        <div class="mp-field">
+          <label>Report format</label>
+          <div class="mp-format" role="tablist">
+            <button data-fmt="standard" title="General QA reports — keeps things simple">Standard</button>
+            <button data-fmt="compliance" title="For regulated / audit-quality evidence — adds Expected/Actual/Bug ID fields">Compliance</button>
+          </div>
+        </div>
+      </div>
+      <div class="mp-env">Auto-detected: <b>Browser:</b> <span id="metaBrowser">—</span> <span><b>OS:</b> <span id="metaOS">—</span></span></div>
+    </div>
+  </div>
+
   <div class="banner" id="captureBanner">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
     <div id="captureBannerText"></div>
@@ -377,6 +530,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       Select all
     </button>
+    <span class="search-wrap" id="searchWrap" title="Filter shots by text in step, description, expected, actual, or bug ID">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="searchInput" placeholder="Filter shots..." autocomplete="off" />
+      <button class="search-clear" id="searchClear" title="Clear filter">×</button>
+    </span>
+    <button id="kbdBtn" title="Keyboard shortcuts">?</button>
     <span class="filter-wrap" title="Limit which screenshots are included in the next Word/PDF export by status">
       Include:
       <select id="exportFilter">
@@ -408,7 +567,7 @@
   </div>
 
   <p class="hint">
-    <b>Capture region</b> / <b>Capture full screen</b> (or press <kbd>R</kbd> / <kbd>F</kbd> while this tab is focused), then pick a screen <b>once</b> — after that you can keep capturing as many shots as you want without re-sharing.
+    <b>Capture region</b> / <b>Capture full screen</b> (or press <kbd>Shift</kbd>+<kbd>R</kbd> / <kbd>Shift</kbd>+<kbd>F</kbd> while this tab is focused), then pick a screen <b>once</b> — after that you can keep capturing as many shots as you want without re-sharing.
     Hit <b>Annotate</b> to draw arrows and boxes, set a <b>Pass / Fail / Blocked</b> status, and group shots into <b>test cases</b>. Export to Word or PDF — <b>only shots assigned to a test case are included</b>. Everything auto-saves on your device — nothing is uploaded.
     <br><b>Live capture</b> keeps one screen pick open and gives you a floating <b>Capture</b> button you can drag onto any window or monitor — snap a shot at every step while you navigate the app, hands-free with auto-capture if you like. <i>(Floating window needs Chrome or Edge; works on http://localhost.)</i>
   </p>
@@ -428,6 +587,11 @@
     <button data-sb="move" title="Move the selected screenshots into a single test case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Move to case…</button>
     <button data-sb="delete" class="danger" title="Delete every selected screenshot (cannot be undone)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>Delete</button>
     <button data-sb="close" title="Close selection">✕</button>
+  </div>
+  <div id="searchStatus" role="status">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span id="searchStatusText"></span>
+    <button id="searchStatusClear">Clear filter</button>
   </div>
   <div id="shots" class="shots"></div>
 </main>
@@ -452,8 +616,14 @@
       <button data-t="rect" title="Rectangle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="1"/></svg>Box</button>
       <button data-t="highlight" title="Highlighter — translucent fill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15 4 21l3-8 9-9a2.828 2.828 0 1 1 4 4l-8 8-3-1z"/></svg>Highlight</button>
       <button data-t="pen" title="Freehand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7-3-3-7 7-1 4z"/><path d="M16 9l3-3"/></svg>Pen</button>
+      <button data-t="text" title="Text label — click to place, type to enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>Text</button>
     </div>
     <div class="swatches" id="annotColors"></div>
+    <div class="width-seg" id="annotWidth" title="Stroke width for shapes">
+      <button data-w="0.5" title="Thin">S</button>
+      <button data-w="1" class="on" title="Medium (default)">M</button>
+      <button data-w="2" title="Thick">L</button>
+    </div>
     <span class="label"></span>
     <button class="btn" id="annotDelete" style="display:none;background:#c0392b;border-color:#c0392b;color:#fff" title="Delete selected shape (Del)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
@@ -492,6 +662,22 @@
 </div>
 
 <div class="lightbox" id="lightbox"><img id="lightboxImg" alt="" /></div>
+<div id="kbdSheet" role="dialog" aria-label="Keyboard shortcuts">
+  <button class="close" id="kbdClose" title="Close">×</button>
+  <h4>Keyboard shortcuts</h4>
+  <dl>
+    <dt><kbd>P</kbd></dt><dd>Tag last-active shot as Pass</dd>
+    <dt><kbd>F</kbd></dt><dd>Tag as Fail</dd>
+    <dt><kbd>B</kbd></dt><dd>Tag as Blocked</dd>
+    <dt><kbd>U</kbd></dt><dd>Tag as Untested</dd>
+    <dt><kbd>⇧ F</kbd></dt><dd>Capture full screen</dd>
+    <dt><kbd>⇧ R</kbd></dt><dd>Capture region</dd>
+    <dt><kbd>⌘ V</kbd></dt><dd>Paste image from clipboard</dd>
+    <dt><kbd>/</kbd></dt><dd>Focus the filter box</dd>
+    <dt><kbd>Esc</kbd></dt><dd>Close/cancel dialogs</dd>
+  </dl>
+  <div class="tip">Shortcuts skip while typing in text fields. The "active shot" is the last one you captured, clicked, or opened.</div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -504,10 +690,45 @@
   let shots = [];   // {id,dataUrl,step,desc,status,ts,caseId}
   let cases = [];   // {id,name,collapsed}
   let uid = 0, caseUid = 0;
+  let lastActiveShotId = null;   // last captured/clicked shot — target for keyboard status shortcuts
+  let searchQuery = "";          // current filter text; empty = no filter
+
+  // ---- Report metadata (persisted) ----
+  const meta = {
+    tester: "",
+    testingDate: new Date().toISOString().slice(0,10),
+    urlUnderTest: "",
+    buildVersion: "",
+    protocol: "",
+    approver: "",
+    notes: "",
+    reportFormat: "standard",   // "standard" | "compliance"
+    metaCollapsed: true
+  };
+  // Auto-detected: browser + OS from userAgent
+  function detectEnv(){
+    const ua = navigator.userAgent || "";
+    let browser = "Unknown";
+    if(/Edg\//.test(ua))         browser = "Edge " + (ua.match(/Edg\/(\d+)/)||[])[1];
+    else if(/OPR|Opera/.test(ua)) browser = "Opera";
+    else if(/Chrome\//.test(ua)) browser = "Chrome " + (ua.match(/Chrome\/(\d+)/)||[])[1];
+    else if(/Firefox\//.test(ua))browser = "Firefox " + (ua.match(/Firefox\/(\d+)/)||[])[1];
+    else if(/Safari\//.test(ua)) browser = "Safari " + (ua.match(/Version\/(\d+)/)||[])[1];
+    let os = "Unknown";
+    if(/Windows NT 10/.test(ua)) os = "Windows 10/11";
+    else if(/Windows NT/.test(ua))os = "Windows";
+    else if(/Mac OS X ([\d_]+)/.test(ua)) os = "macOS " + (ua.match(/Mac OS X ([\d_]+)/)||[])[1].replace(/_/g,".");
+    else if(/Linux/.test(ua))    os = "Linux";
+    else if(/Android/.test(ua))  os = "Android";
+    else if(/iPhone|iPad|iOS/.test(ua)) os = "iOS";
+    return { browser, os };
+  }
+  const detectedEnv = detectEnv();
+
   const $ = s => document.querySelector(s);
   const shotsEl=$("#shots"), emptyEl=$("#emptyState"), exportBtn=$("#btnExport"), exportPdfBtn=$("#btnExportPdf"), resetBtn=$("#btnReset");
 
-  function newCase(name){ const c={id:++caseUid,name:name||`Test case ${cases.length+1}`,collapsed:false,excluded:false}; cases.push(c); return c; }
+  function newCase(name){ const c={id:++caseUid,name:name||`Test case ${cases.length+1}`,tcid:"",collapsed:false,excluded:false}; cases.push(c); return c; }
   function caseName(id){ const c=cases.find(x=>x.id===id); return c?c.name:"Ungrouped"; }
   // shots not assigned to an existing case fall into a synthetic "Ungrouped" bucket (caseId null)
 
@@ -538,7 +759,7 @@
   async function persist(){
     if(!db||!supportsDB) return;
     try{
-      const payload={ title:$("#docTitle").value, uid, caseUid, shots, cases };
+      const payload={ title:$("#docTitle").value, uid, caseUid, shots, cases, meta };
       await new Promise((res,rej)=>{ const tx=db.transaction(STORE,"readwrite"); tx.objectStore(STORE).put(payload,KEY); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); });
       setSaveState("saved");
     }catch(e){ console.error(e); setSaveState("saved"); }
@@ -548,10 +769,13 @@
     try{
       const data=await new Promise((res,rej)=>{ const tx=db.transaction(STORE,"readonly"); const r=tx.objectStore(STORE).get(KEY); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
       if(data && Array.isArray(data.shots)){
-        shots=data.shots.map(s=>({ ...s, ts:new Date(s.ts), status:s.status||"untested", caseId:s.caseId!=null?s.caseId:null }));
-        cases=Array.isArray(data.cases)?data.cases.map(c=>({...c,collapsed:!!c.collapsed,excluded:!!c.excluded})):[];
+        shots=data.shots.map(s=>({ expected:"", actual:"", bugId:"", ...s, ts:new Date(s.ts), status:s.status||"untested", caseId:s.caseId!=null?s.caseId:null }));
+        cases=Array.isArray(data.cases)?data.cases.map(c=>({tcid:"",...c,collapsed:!!c.collapsed,excluded:!!c.excluded})):[];
         uid=data.uid||shots.reduce((m,s)=>Math.max(m,s.id),0);
         caseUid=data.caseUid||cases.reduce((m,c)=>Math.max(m,c.id),0);
+        if(data.meta && typeof data.meta === "object"){
+          Object.assign(meta, data.meta);
+        }
         if(data.title) $("#docTitle").value=data.title;
         if(shots.length) toast(`Restored ${shots.length} saved screenshot(s)`,"ok");
       }
@@ -1059,7 +1283,7 @@
         count++;
       }
     }
-    return (sum/count) > 5;    // empirically ~1 for identical, ~10+ for scroll
+    return (sum/count) > 6;    // empirically ~1 for identical, ~10+ for scroll
   }
 
   function updateFpFrameCount(){
@@ -1161,59 +1385,207 @@
     }
     return count>0 ? sum/count : Infinity;
   }
+  // Find how far the top of `next` overlaps the bottom of `prev`.
+  // Returns {overlap, confident, score} where:
+  //   overlap  = pixels of `next` that are already shown in `prev` (0 = no overlap)
+  //   confident = true if this match is clearly better than alternatives
+  //   score    = quality of the match (lower = better)
+  //
+  // Confidence is key on repetitive content (tables, list views). Without it,
+  // the algorithm locks onto a false "match" between two similar-looking rows
+  // and returns a too-small overlap, leaving duplicates in the stitched image.
   function findOverlap(prevCanvas, nextCanvas){
-    if(prevCanvas.width !== nextCanvas.width) return 0;
+    if(prevCanvas.width !== nextCanvas.width) return {overlap:0, confident:false, score:Infinity};
     const w = prevCanvas.width;
-    const stripH = Math.min(80, Math.floor(prevCanvas.height/6), Math.floor(nextCanvas.height/6));
-    if(stripH < 10) return 0;
-    const prevCtx = prevCanvas.getContext("2d");
-    const nextCtx = nextCanvas.getContext("2d");
+    // MUCH larger strip than before (was 80). A ~30% strip pulls in distinctive
+    // features (headers, borders, differently-shaped rows) instead of just the
+    // last few repeating rows.
+    const stripH = Math.max(120, Math.min(400, Math.floor(prevCanvas.height * 0.3), Math.floor(nextCanvas.height * 0.5)));
+    if(stripH < 40) return {overlap:0, confident:false, score:Infinity};
     let prevBottom, searchTop;
     try{
-      prevBottom = prevCtx.getImageData(0, prevCanvas.height - stripH, w, stripH).data;
-      const searchH = Math.min(Math.floor(nextCanvas.height*0.85), 1400);
-      searchTop = nextCtx.getImageData(0, 0, w, searchH).data;
+      prevBottom = prevCanvas.getContext("2d").getImageData(0, prevCanvas.height - stripH, w, stripH).data;
+      const searchH = Math.min(Math.floor(nextCanvas.height * 0.9), stripH + 1500);
+      searchTop = nextCanvas.getContext("2d").getImageData(0, 0, w, searchH).data;
       var effSearchH = searchH;
+    } catch(e){ return {overlap:0, confident:false, score:Infinity}; }
+    const stepX = Math.max(4, Math.floor(w/240));
+    const maxY = effSearchH - stripH;
+    if(maxY < 1) return {overlap:0, confident:false, score:Infinity};
+
+    // Score for a given offset y. Sampled sparsely for speed.
+    function scoreAt(y, dyStep){
+      let sum=0, count=0;
+      for(let dy=0; dy<stripH; dy+=dyStep){
+        for(let x=0; x<w; x+=stepX){
+          const pi = (dy*w + x)*4;
+          const ni = ((y+dy)*w + x)*4;
+          sum += Math.abs(prevBottom[pi]   - searchTop[ni])
+               + Math.abs(prevBottom[pi+1] - searchTop[ni+1])
+               + Math.abs(prevBottom[pi+2] - searchTop[ni+2]);
+          count++;
+        }
+      }
+      return count>0 ? sum/count : Infinity;
+    }
+
+    // Coarse pass: record all scores so we can find best AND second-best
+    const coarseStep = 8, dyStep = 4;
+    const results = [];   // [y, score]
+    for(let y=0; y<=maxY; y+=coarseStep){
+      results.push([y, scoreAt(y, dyStep)]);
+    }
+    // Find best position and the best "second position" (well-separated from the best,
+    // to avoid the two being neighbors on the same peak).
+    let bestY = 0, bestScore = Infinity;
+    for(const [y, s] of results){
+      if(s < bestScore){ bestScore = s; bestY = y; }
+    }
+    let secondScore = Infinity;
+    // "Well-separated" = at least 10% of prev height (or 60px) away from bestY,
+    // so we're comparing genuinely different positions.
+    const sepPx = Math.max(60, Math.floor(prevCanvas.height * 0.1));
+    for(const [y, s] of results){
+      if(Math.abs(y - bestY) >= sepPx && s < secondScore){ secondScore = s; }
+    }
+
+    // Fine pass around best coarse match
+    const lo = Math.max(0, bestY-coarseStep), hi = Math.min(maxY, bestY+coarseStep);
+    for(let y=lo; y<=hi; y++){
+      const s = scoreAt(y, 2);
+      if(s < bestScore){ bestScore = s; bestY = y; }
+    }
+
+    // Quality gates:
+    //   * If absolute score is high (>25), match is bad — reject entirely
+    //   * If second-best is nearly as good, the match is ambiguous
+    if(bestScore > 25) return {overlap:0, confident:false, score:bestScore};
+    // Confident = clearly better than alternatives (gap of at least 6, or ratio < 0.7)
+    const gap = secondScore - bestScore;
+    const confident = (bestScore < 12) && (gap >= 6 || bestScore < secondScore * 0.7);
+    return {overlap: bestY + stripH, confident, score: bestScore};
+  }
+
+  // Find rows near the top of two same-width frames that are pixel-similar.
+  // Uses a "density-of-matches" test: the fixed region is the largest H such
+  // that at least ~80% of rows in 0..H match. This handles sticky headers that
+  // contain small dynamic elements (badges, spinners, hover states) — a strict
+  // "stop on first mismatch" check misses them.
+  function fixedTopExtent(a, b, maxRows){
+    if(a.width !== b.width) return 0;
+    const w = a.width;
+    const rows = Math.min(maxRows, a.height, b.height);
+    if(rows < 4) return 0;
+    let dataA, dataB;
+    try{
+      dataA = a.getContext("2d").getImageData(0, 0, w, rows).data;
+      dataB = b.getContext("2d").getImageData(0, 0, w, rows).data;
     } catch(e){ return 0; }
     const stepX = Math.max(4, Math.floor(w/240));
-    let bestY = 0, bestScore = Infinity;
-    const maxY = effSearchH - stripH;
-    // Coarse pass every 4 rows
-    for(let y=0; y<=maxY; y+=4){
-      let sum=0, count=0;
-      for(let dy=0; dy<stripH; dy+=2){
-        for(let x=0; x<w; x+=stepX){
-          const pi = (dy*w + x)*4;
-          const ni = ((y+dy)*w + x)*4;
-          sum += Math.abs(prevBottom[pi]   - searchTop[ni])
-               + Math.abs(prevBottom[pi+1] - searchTop[ni+1])
-               + Math.abs(prevBottom[pi+2] - searchTop[ni+2]);
-          count++;
-        }
+    const rowThreshold = 5;   // strict per-pixel-channel avg for a "matching" row
+    const densityThreshold = 0.75;   // require 75% of scanned rows to match
+    const minMatches = 12;    // and at least 12 total matching rows
+    let matches = 0;
+    let bestH = 0;
+    let consecutiveMismatch = 0;
+    const maxConsecutiveMismatch = 30;   // give up if we see many non-match rows in a row
+    for(let y = 0; y < rows; y++){
+      let sum = 0, count = 0;
+      for(let x = 0; x < w; x += stepX){
+        const i = (y * w + x) * 4;
+        sum += Math.abs(dataA[i]   - dataB[i])
+             + Math.abs(dataA[i+1] - dataB[i+1])
+             + Math.abs(dataA[i+2] - dataB[i+2]);
+        count++;
       }
+      if(count === 0) break;
       const avg = sum/count;
-      if(avg < bestScore){ bestScore = avg; bestY = y; }
-    }
-    // Fine pass around best match
-    const lo = Math.max(0, bestY-4), hi = Math.min(maxY, bestY+4);
-    for(let y=lo; y<=hi; y++){
-      let sum=0, count=0;
-      for(let dy=0; dy<stripH; dy++){
-        for(let x=0; x<w; x+=stepX){
-          const pi = (dy*w + x)*4;
-          const ni = ((y+dy)*w + x)*4;
-          sum += Math.abs(prevBottom[pi]   - searchTop[ni])
-               + Math.abs(prevBottom[pi+1] - searchTop[ni+1])
-               + Math.abs(prevBottom[pi+2] - searchTop[ni+2]);
-          count++;
-        }
+      if(avg <= rowThreshold){
+        matches++;
+        consecutiveMismatch = 0;
+      } else {
+        consecutiveMismatch++;
+        if(consecutiveMismatch >= maxConsecutiveMismatch) break;
       }
-      const avg = sum/count;
-      if(avg < bestScore){ bestScore = avg; bestY = y; }
+      const density = matches / (y+1);
+      if(density >= densityThreshold && matches >= minMatches){
+        bestH = y + 1;
+      }
     }
-    if(bestScore > 30) return 0;
-    return bestY + stripH;
+    return bestH;
   }
+  // Same idea but from the bottom of the frames upward.
+  function fixedBottomExtent(a, b, maxRows){
+    if(a.width !== b.width || a.height !== b.height) return 0;
+    const w = a.width, H = a.height;
+    const rows = Math.min(maxRows, H);
+    if(rows < 4) return 0;
+    let dataA, dataB;
+    try{
+      dataA = a.getContext("2d").getImageData(0, H-rows, w, rows).data;
+      dataB = b.getContext("2d").getImageData(0, H-rows, w, rows).data;
+    } catch(e){ return 0; }
+    const stepX = Math.max(4, Math.floor(w/240));
+    const rowThreshold = 5, densityThreshold = 0.75, minMatches = 12;
+    let matches = 0, bestExtent = 0, consecutiveMismatch = 0;
+    const maxConsecutiveMismatch = 30;
+    for(let dy = 0; dy < rows; dy++){
+      const y = rows - 1 - dy;
+      let sum = 0, count = 0;
+      for(let x = 0; x < w; x += stepX){
+        const i = (y * w + x) * 4;
+        sum += Math.abs(dataA[i]   - dataB[i])
+             + Math.abs(dataA[i+1] - dataB[i+1])
+             + Math.abs(dataA[i+2] - dataB[i+2]);
+        count++;
+      }
+      if(count === 0) break;
+      const avg = sum/count;
+      if(avg <= rowThreshold){
+        matches++;
+        consecutiveMismatch = 0;
+      } else {
+        consecutiveMismatch++;
+        if(consecutiveMismatch >= maxConsecutiveMismatch) break;
+      }
+      const density = matches / (dy+1);
+      if(density >= densityThreshold && matches >= minMatches){
+        bestExtent = dy + 1;
+      }
+    }
+    return bestExtent;
+  }
+  // Detect fixed top/bottom heights across an entire sequence of frames.
+  // Returns the MINIMUM height that all pairs share — a conservative estimate
+  // that avoids over-cropping. If frames disagree, we take the smallest.
+  function detectFixedRegions(frames){
+    if(frames.length < 2) return {top:0, bottom:0};
+    // Search up to 50% of the frame — modern web apps sometimes have BIG sticky
+    // areas (main toolbar + secondary tabs + subheader, all stacked).
+    const maxCheck = Math.min(600, Math.floor(frames[0].height * 0.5));
+    let minTop = Infinity, minBot = Infinity;
+    for(let i = 1; i < frames.length; i++){
+      const t = fixedTopExtent(frames[0], frames[i], maxCheck);
+      const b = fixedBottomExtent(frames[0], frames[i], maxCheck);
+      if(t < minTop) minTop = t;
+      if(b < minBot) minBot = b;
+      if(minTop === 0 && minBot === 0) break;
+    }
+    if(minTop === Infinity) minTop = 0;
+    if(minBot === Infinity) minBot = 0;
+    if(minTop < 20) minTop = 0;
+    if(minBot < 20) minBot = 0;
+    return {top: minTop, bottom: minBot};
+  }
+  // Return a cropped canvas containing a strip of the source.
+  function sliceCanvas(src, y, h){
+    if(h <= 0) return src;
+    const out = document.createElement("canvas");
+    out.width = src.width; out.height = h;
+    out.getContext("2d").drawImage(src, 0, y, src.width, h, 0, 0, src.width, h);
+    return out;
+  }
+
   function stitchFrames(frames){
     if(frames.length < 2) return null;
     const w = frames[0].width;
@@ -1223,12 +1595,74 @@
         return null;
       }
     }
-    const overlaps = [0];
-    for(let i=1;i<frames.length;i++){
-      overlaps.push(findOverlap(frames[i-1], frames[i]));
+
+    // ---------- STEP 1: detect fixed (sticky) top and bottom regions ----------
+    // These are portions of the frame that don't change as the user scrolls, like
+    // ServiceNow's toolbar or a fixed footer. If we don't crop them, they get
+    // duplicated in every join of the stitched image.
+    const fixed = detectFixedRegions(frames);
+
+    // ---------- STEP 2: build cropped frames for stitching ----------
+    // The first frame keeps its fixed top (it's the first appearance of that
+    // header); the last frame keeps its fixed bottom. All other frames get both
+    // cropped away, since their fixed regions are already represented elsewhere.
+    const N = frames.length;
+    const cropped = frames.map((f, i) => {
+      const cropTop = (i === 0) ? 0 : fixed.top;
+      const cropBot = (i === N-1) ? 0 : fixed.bottom;
+      const contentH = f.height - cropTop - cropBot;
+      if(contentH < 20) return f;   // safety
+      return sliceCanvas(f, cropTop, contentH);
+    });
+
+    // ---------- STEP 3: overlap detection between consecutive cropped frames ----------
+    const results = [{overlap:0, confident:true, score:0}];   // first frame is anchor
+    for(let i=1;i<cropped.length;i++){
+      results.push(findOverlap(cropped[i-1], cropped[i]));
     }
+    // Learn typical scroll amount from confident pairs
+    const confidentScrolls = [];
+    for(let i=1;i<results.length;i++){
+      if(results[i].confident && results[i].overlap > 0){
+        confidentScrolls.push(cropped[i].height - results[i].overlap);
+      }
+    }
+    let medianScroll = null;
+    let usedFallbackMedian = false;
+    if(confidentScrolls.length){
+      const sorted = confidentScrolls.slice().sort((a,b)=>a-b);
+      medianScroll = sorted[Math.floor(sorted.length/2)];
+    } else if(cropped.length > 1) {
+      // No confident matches at all — content is too visually repetitive to lock
+      // onto a clean overlap. Assume the user scrolled by ~half the cropped
+      // viewport per capture, which is a safer default than zero overlap
+      // (which would leave large duplicated regions).
+      medianScroll = Math.floor(cropped[1].height * 0.5);
+      usedFallbackMedian = true;
+    }
+    // Fill in uncertain pairs from the median scroll — INCLUDING confident-but-
+    // suspiciously-small ones. The check below overrides any overlap that's
+    // implausibly smaller than the typical scroll amount, which is where
+    // "whole sections repeat" comes from.
+    let uncertainCount = 0;
+    for(let i=1;i<results.length;i++){
+      const isUncertain = !results[i].confident;
+      if(isUncertain) uncertainCount++;
+      if(medianScroll !== null){
+        const est = Math.max(0, cropped[i].height - medianScroll);
+        // Override cases:
+        //   - overlap is 0 (no match found)
+        //   - overlap is dramatically smaller than the median-based estimate
+        //     (algorithm probably locked onto a false match on repetitive content)
+        if(results[i].overlap === 0 || (isUncertain && results[i].overlap < est * 0.6)){
+          results[i].overlap = est;
+        }
+      }
+    }
+
+    // ---------- STEP 4: stitch the cropped frames ----------
     let totalH = 0;
-    for(let i=0;i<frames.length;i++) totalH += frames[i].height - overlaps[i];
+    for(let i=0;i<cropped.length;i++) totalH += cropped[i].height - results[i].overlap;
     if(totalH > 32000){
       toast(`Stitched image is very tall (${totalH}px) \u2014 some browsers may struggle.`,"err");
     }
@@ -1236,12 +1670,22 @@
     out.width = w; out.height = totalH;
     const ctx = out.getContext("2d");
     let y = 0;
-    for(let i=0;i<frames.length;i++){
-      const c = frames[i];
-      const skip = overlaps[i];
+    for(let i=0;i<cropped.length;i++){
+      const c = cropped[i];
+      const skip = results[i].overlap;
       const drawH = c.height - skip;
       ctx.drawImage(c, 0, skip, w, drawH, 0, y, w, drawH);
       y += drawH;
+    }
+    // Friendly summary toast covering all the smart bits we applied
+    const notes = [];
+    if(fixed.top > 0)    notes.push(`removed a ${fixed.top}px sticky header`);
+    if(fixed.bottom > 0) notes.push(`removed a ${fixed.bottom}px sticky footer`);
+    if(usedFallbackMedian) notes.push(`estimated all scroll amounts (content too uniform to match)`);
+    else if(uncertainCount > 0) notes.push(`${uncertainCount} uncertain join${uncertainCount===1?"":"s"}`);
+    if(notes.length){
+      const kind = (uncertainCount > 0 || usedFallbackMedian) ? "" : "ok";
+      toast(`Stitched (${notes.join(", ")}).`, kind);
     }
     return out;
   }
@@ -1370,6 +1814,7 @@
   const annot=$("#annot"), aCanvas=$("#annotCanvas"), aCtx=aCanvas.getContext("2d");
   const COLORS=["#e02f2f","#e07a2f","#f1c40f","#2f7d4f","#2f6fe0","#9b2fe0","#11161f","#ffffff"];
   let annotEditId=null, baseImg=null, aScale=1, shapes=[], curTool="arrow", curColor=COLORS[0];
+  let curWidth=1;   // stroke-width multiplier: 0.5 (S), 1 (M, default), 2 (L)
   let aDrawing=false, aStart=null, penPts=[];
   let selectedIdx=-1;         // index into shapes[] of the currently selected shape (-1 = none)
   let dragMode=null;          // "move" while dragging a selected shape
@@ -1384,13 +1829,28 @@
     // If a shape is selected and the user picks a color, recolor it
     if(selectedIdx>=0 && shapes[selectedIdx]){ shapes[selectedIdx].color=curColor; redrawAnnot(); }
   });
+  // Width segment: S / M / L stroke thickness
+  const widthWrap = $("#annotWidth");
+  widthWrap.addEventListener("click", e=>{
+    const b = e.target.closest("button[data-w]"); if(!b) return;
+    curWidth = parseFloat(b.dataset.w);
+    [...widthWrap.children].forEach(x=>x.classList.toggle("on", x===b));
+    // If a shape is selected, update its width live
+    if(selectedIdx>=0 && shapes[selectedIdx]){
+      shapes[selectedIdx].widthMult = curWidth;
+      redrawAnnot();
+    }
+  });
   $("#annotTools").addEventListener("click",e=>{
     const b=e.target.closest("button"); if(!b) return;
+    // If a text editor is currently open, commit it before switching tools
+    if(textEditor && textEditor.parentNode){ commitTextEditor(); }
     curTool=b.dataset.t;
     [...$("#annotTools").children].forEach(x=>x.classList.toggle("on",x===b));
     // Switching tools clears selection unless we're in select mode
     if(curTool!=="select"){ setSelected(-1); }
     aCanvas.classList.toggle("tool-select", curTool==="select");
+    aCanvas.classList.toggle("tool-text",   curTool==="text");
   });
 
   function openAnnot(id){
@@ -1407,11 +1867,19 @@
     };
     img.src=s.dataUrl;
   }
-  function closeAnnot(){ annot.classList.remove("open"); baseImg=null; annotEditId=null; shapes=[]; selectedIdx=-1; updateDeleteBtn(); }
+  function closeAnnot(){ cleanupTextEditor(); annot.classList.remove("open"); baseImg=null; annotEditId=null; shapes=[]; selectedIdx=-1; updateDeleteBtn(); }
 
   function setSelected(idx){
     selectedIdx=idx;
     updateDeleteBtn();
+    // Sync width segment to reflect the selected shape's width
+    if(idx>=0 && shapes[idx] && shapes[idx].widthMult){
+      const widthWrap = $("#annotWidth");
+      const target = shapes[idx].widthMult;
+      [...widthWrap.children].forEach(b=>{
+        b.classList.toggle("on", parseFloat(b.dataset.w) === target);
+      });
+    }
     redrawAnnot();
   }
   function updateDeleteBtn(){
@@ -1435,7 +1903,9 @@
 
   function drawShape(ctx,sh,canvasW){
     ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle=sh.color; ctx.fillStyle=sh.color;
-    const lw=Math.max(2.5,canvasW*0.006); ctx.lineWidth=lw;
+    const baseLw = Math.max(2.5, canvasW*0.006);
+    const lw = baseLw * (sh.widthMult || 1);
+    ctx.lineWidth=lw;
     if(sh.type==="rect"){ ctx.strokeRect(sh.x,sh.y,sh.w,sh.h); }
     else if(sh.type==="highlight"){
       ctx.save();
@@ -1455,6 +1925,47 @@
       ctx.lineTo(sh.x2-head*Math.cos(ang+Math.PI/6),sh.y2-head*Math.sin(ang+Math.PI/6));
       ctx.closePath(); ctx.fill();
     }
+    else if(sh.type==="text"){
+      // Font size scales with canvas width, same principle as line width
+      const fontSize = sh.size || Math.max(14, canvasW*0.022);
+      ctx.font = `700 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+      ctx.textBaseline = "top";
+      // For readability, draw a subtle white outline behind dark text (and vice-versa)
+      const lines = String(sh.text||"").split("\n");
+      const lineH = fontSize * 1.15;
+      // outline stroke — pick the contrasting color
+      ctx.save();
+      ctx.lineJoin="round"; ctx.lineCap="round";
+      ctx.strokeStyle = isDarkColor(sh.color) ? "rgba(255,255,255,0.9)" : "rgba(20,33,61,0.75)";
+      ctx.lineWidth = Math.max(2, fontSize*0.14);
+      lines.forEach((line, i)=>{ ctx.strokeText(line, sh.x, sh.y + i*lineH); });
+      ctx.restore();
+      ctx.fillStyle = sh.color;
+      lines.forEach((line, i)=>{ ctx.fillText(line, sh.x, sh.y + i*lineH); });
+    }
+  }
+
+  // "Is this hex color dark enough to warrant a light outline?" — used for text legibility
+  function isDarkColor(hex){
+    if(!hex) return true;
+    const h = hex.replace("#","");
+    const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+    // Rec. 601 luma
+    const y = 0.299*r + 0.587*g + 0.114*b;
+    return y < 160;
+  }
+
+  // Measure a text shape without a persistent context — we build a temp
+  // canvas context so measuring can happen from anywhere (bounds, hit-test).
+  const _measCtx = document.createElement("canvas").getContext("2d");
+  function measureTextShape(sh, canvasW){
+    const fontSize = sh.size || Math.max(14, (canvasW||aCanvas.width)*0.022);
+    _measCtx.font = `700 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    const lines = String(sh.text||"").split("\n");
+    let maxW = 0;
+    for(const line of lines){ const m = _measCtx.measureText(line).width; if(m>maxW) maxW = m; }
+    const lineH = fontSize * 1.15;
+    return { w: Math.max(20, maxW), h: lineH * lines.length, fontSize, lineH };
   }
 
   // Bounding box of a shape (in canvas coordinates)
@@ -1472,6 +1983,10 @@
       let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
       sh.pts.forEach(p=>{ if(p.x<minX)minX=p.x; if(p.y<minY)minY=p.y; if(p.x>maxX)maxX=p.x; if(p.y>maxY)maxY=p.y; });
       return {x:minX,y:minY,w:maxX-minX,h:maxY-minY};
+    }
+    if(sh.type==="text"){
+      const m = measureTextShape(sh, aCanvas.width);
+      return {x: sh.x, y: sh.y, w: m.w, h: m.h};
     }
     return {x:0,y:0,w:0,h:0};
   }
@@ -1527,6 +2042,10 @@
       }
       return false;
     }
+    if(sh.type==="text"){
+      const b=shapeBounds(sh);
+      return p.x>=b.x-tol && p.x<=b.x+b.w+tol && p.y>=b.y-tol && p.y<=b.y+b.h+tol;
+    }
     return false;
   }
   function pickTopShapeAt(p){
@@ -1539,17 +2058,83 @@
   }
 
   function moveShapeBy(sh, dx, dy){
-    if(sh.type==="rect"||sh.type==="highlight"){ sh.x+=dx; sh.y+=dy; }
+    if(sh.type==="rect"||sh.type==="highlight"||sh.type==="text"){ sh.x+=dx; sh.y+=dy; }
     else if(sh.type==="arrow"||sh.type==="line"){ sh.x1+=dx; sh.y1+=dy; sh.x2+=dx; sh.y2+=dy; }
     else if(sh.type==="pen"){ sh.pts=sh.pts.map(pt=>({x:pt.x+dx,y:pt.y+dy})); }
   }
   function cloneShape(sh){ return JSON.parse(JSON.stringify(sh)); }
+
+  /* ---- inline text editor for the Text tool ---- */
+  let textEditor = null;         // the <input> element
+  let textEditorTarget = null;   // {kind:"new"|"edit", x, y, idx?}
+  function openTextEditor(canvasX, canvasY, existingIdx){
+    if(!baseImg) return;
+    // Position input in stage coordinates (canvas rect is relative to viewport)
+    const stage = annot.querySelector(".stage");
+    const rect = aCanvas.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const left = (rect.left - stageRect.left) + canvasX;
+    const top  = (rect.top  - stageRect.top)  + canvasY;
+    if(textEditor && textEditor.parentNode) commitTextEditor();
+    textEditor = document.createElement("input");
+    textEditor.type = "text";
+    textEditor.id = "annotTextInput";
+    textEditor.placeholder = "Type label, Enter to commit";
+    textEditor.style.left = left + "px";
+    textEditor.style.top = top + "px";
+    // Match on-screen font size (canvas is scaled by aScale so ratio is 1:1 for the input)
+    const fontSize = existingIdx!=null && shapes[existingIdx].size
+      ? shapes[existingIdx].size
+      : Math.max(14, aCanvas.width*0.022);
+    textEditor.style.fontSize = fontSize + "px";
+    textEditor.style.color = curColor;
+    if(existingIdx!=null){ textEditor.value = shapes[existingIdx].text || ""; }
+    textEditorTarget = existingIdx!=null
+      ? { kind:"edit", idx: existingIdx }
+      : { kind:"new", x: canvasX, y: canvasY, size: fontSize };
+    stage.appendChild(textEditor);
+    setTimeout(()=>{ textEditor.focus(); textEditor.select(); }, 0);
+    textEditor.addEventListener("keydown", (ev)=>{
+      if(ev.key==="Enter"){ ev.preventDefault(); commitTextEditor(); }
+      else if(ev.key==="Escape"){ ev.preventDefault(); cancelTextEditor(); }
+    });
+    textEditor.addEventListener("blur", ()=>{ commitTextEditor(); });
+  }
+  function commitTextEditor(){
+    if(!textEditor || !textEditorTarget) return cancelTextEditor();
+    const value = textEditor.value.trim();
+    if(textEditorTarget.kind === "new"){
+      if(value){
+        shapes.push({ id:++shapeUid, type:"text", color:curColor, x:textEditorTarget.x, y:textEditorTarget.y, text:value, size:textEditorTarget.size });
+      }
+    } else {
+      // editing existing shape
+      const idx = textEditorTarget.idx;
+      if(shapes[idx] && shapes[idx].type === "text"){
+        if(value){ shapes[idx].text = value; }
+        else { shapes.splice(idx,1); setSelected(-1); }
+      }
+    }
+    cleanupTextEditor();
+    redrawAnnot();
+  }
+  function cancelTextEditor(){ cleanupTextEditor(); redrawAnnot(); }
+  function cleanupTextEditor(){
+    if(textEditor && textEditor.parentNode) textEditor.parentNode.removeChild(textEditor);
+    textEditor = null;
+    textEditorTarget = null;
+  }
 
   function aPos(e){ const r=aCanvas.getBoundingClientRect(); return {x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,y:(e.touches?e.touches[0].clientY:e.clientY)-r.top}; }
 
   function aStartDraw(e){
     e.preventDefault();
     const p=aPos(e);
+    if(curTool==="text"){
+      // Text tool: click anywhere to open an inline input
+      openTextEditor(p.x, p.y);
+      return;
+    }
     if(curTool==="select"){
       // Selection / drag start
       const idx = pickTopShapeAt(p);
@@ -1585,11 +2170,11 @@
     }
     if(!aDrawing) return; e.preventDefault();
     let shape;
-    if(curTool==="arrow") shape={type:"arrow",color:curColor,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y};
-    else if(curTool==="line") shape={type:"line",color:curColor,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y};
-    else if(curTool==="rect") shape={type:"rect",color:curColor,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)};
-    else if(curTool==="highlight") shape={type:"highlight",color:curColor,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)};
-    else { penPts.push(p); shape={type:"pen",color:curColor,pts:penPts}; }
+    if(curTool==="arrow") shape={type:"arrow",color:curColor,widthMult:curWidth,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y};
+    else if(curTool==="line") shape={type:"line",color:curColor,widthMult:curWidth,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y};
+    else if(curTool==="rect") shape={type:"rect",color:curColor,widthMult:curWidth,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)};
+    else if(curTool==="highlight") shape={type:"highlight",color:curColor,widthMult:curWidth,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)};
+    else { penPts.push(p); shape={type:"pen",color:curColor,widthMult:curWidth,pts:penPts}; }
     redrawAnnot(shape);
   }
   function aEndDraw(e){
@@ -1599,14 +2184,22 @@
     }
     if(!aDrawing) return; aDrawing=false; e.preventDefault();
     const p=aPos(e);
-    if(curTool==="arrow"){ if(Math.hypot(p.x-aStart.x,p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"arrow",color:curColor,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y}); }
-    else if(curTool==="line"){ if(Math.hypot(p.x-aStart.x,p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"line",color:curColor,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y}); }
-    else if(curTool==="rect"){ if(Math.abs(p.x-aStart.x)>4&&Math.abs(p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"rect",color:curColor,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)}); }
-    else if(curTool==="highlight"){ if(Math.abs(p.x-aStart.x)>4&&Math.abs(p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"highlight",color:curColor,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)}); }
-    else { if(penPts.length>1) shapes.push({id:++shapeUid,type:"pen",color:curColor,pts:penPts}); }
+    if(curTool==="arrow"){ if(Math.hypot(p.x-aStart.x,p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"arrow",color:curColor,widthMult:curWidth,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y}); }
+    else if(curTool==="line"){ if(Math.hypot(p.x-aStart.x,p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"line",color:curColor,widthMult:curWidth,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y}); }
+    else if(curTool==="rect"){ if(Math.abs(p.x-aStart.x)>4&&Math.abs(p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"rect",color:curColor,widthMult:curWidth,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)}); }
+    else if(curTool==="highlight"){ if(Math.abs(p.x-aStart.x)>4&&Math.abs(p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"highlight",color:curColor,widthMult:curWidth,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)}); }
+    else { if(penPts.length>1) shapes.push({id:++shapeUid,type:"pen",color:curColor,widthMult:curWidth,pts:penPts}); }
     redrawAnnot();
   }
   aCanvas.addEventListener("mousedown",aStartDraw); aCanvas.addEventListener("mousemove",aMoveDraw); window.addEventListener("mouseup",aEndDraw);
+  aCanvas.addEventListener("dblclick", (e)=>{
+    const p = aPos(e);
+    const idx = pickTopShapeAt(p);
+    if(idx>=0 && shapes[idx].type==="text"){
+      // Open editor pre-filled with the existing text; commit will update it
+      openTextEditor(shapes[idx].x, shapes[idx].y, idx);
+    }
+  });
   aCanvas.addEventListener("touchstart",aStartDraw,{passive:false}); aCanvas.addEventListener("touchmove",aMoveDraw,{passive:false}); aCanvas.addEventListener("touchend",aEndDraw,{passive:false});
 
   // Delete selected shape (via button or keyboard)
@@ -1644,13 +2237,140 @@
       if(sh.type==="rect"||sh.type==="highlight"){ big.x*=inv; big.y*=inv; big.w*=inv; big.h*=inv; }
       else if(sh.type==="arrow"||sh.type==="line"){ big.x1*=inv; big.y1*=inv; big.x2*=inv; big.y2*=inv; }
       else if(sh.type==="pen"){ big.pts=sh.pts.map(p=>({x:p.x*inv,y:p.y*inv})); }
+      else if(sh.type==="text"){ big.x*=inv; big.y*=inv; if(sh.size){ big.size = sh.size*inv; } }
       drawShape(octx,big,out.width);
     });
     s.dataUrl=out.toDataURL("image/png"); closeAnnot(); render(); scheduleSave(); toast("Annotations saved","ok");
   });
 
+  /* ====== report metadata UI ====== */
+  function initMetaPanelUI(){
+    $("#metaBrowser").textContent = detectedEnv.browser;
+    $("#metaOS").textContent = detectedEnv.os;
+    const bind = (id, key)=>{
+      const el = $(id); if(!el) return;
+      el.value = meta[key] || "";
+      el.addEventListener("input", ()=>{ meta[key] = el.value; scheduleSave(); updateMetaSummary(); });
+    };
+    bind("#metaTester","tester");
+    bind("#metaDate","testingDate");
+    bind("#metaUrl","urlUnderTest");
+    bind("#metaBuild","buildVersion");
+    bind("#metaProtocol","protocol");
+    bind("#metaApprover","approver");
+    bind("#metaNotes","notes");
+    const panel = $("#metaPanel");
+    const toggle = $("#mpToggle");
+    if(meta.metaCollapsed) panel.classList.add("collapsed"); else panel.classList.remove("collapsed");
+    toggle.addEventListener("click", ()=>{
+      panel.classList.toggle("collapsed");
+      meta.metaCollapsed = panel.classList.contains("collapsed");
+      scheduleSave();
+    });
+    const fmtWrap = panel.querySelector(".mp-format");
+    fmtWrap.querySelectorAll("button").forEach(b=>{
+      b.classList.toggle("on", b.dataset.fmt === meta.reportFormat);
+      b.addEventListener("click", ()=>{
+        meta.reportFormat = b.dataset.fmt;
+        fmtWrap.querySelectorAll("button").forEach(x=>x.classList.toggle("on", x===b));
+        scheduleSave();
+        render();
+        updateMetaSummary();
+      });
+    });
+    updateMetaSummary();
+  }
+  function updateMetaSummary(){
+    const parts = [];
+    if(meta.tester) parts.push(meta.tester);
+    parts.push(meta.reportFormat === "compliance" ? "Compliance format" : "Standard format");
+    if(meta.urlUnderTest) parts.push(meta.urlUnderTest.replace(/^https?:\/\//,"").slice(0,40));
+    if(meta.buildVersion) parts.push("build " + meta.buildVersion);
+    $("#mpSummary").textContent = parts.join(" \u00B7 ");
+  }
+  function isComplianceMode(){ return meta.reportFormat === "compliance"; }
+
+  /* ====== search filter, keyboard shortcuts, drag-reorder ====== */
+  function matchesSearch(s){
+    if(!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (s.step||"").toLowerCase().includes(q) ||
+      (s.desc||"").toLowerCase().includes(q) ||
+      (s.expected||"").toLowerCase().includes(q) ||
+      (s.actual||"").toLowerCase().includes(q) ||
+      (s.bugId||"").toLowerCase().includes(q)
+    );
+  }
+  function applySearchFilterUI(){
+    // Called after each render + on every search-input change.
+    if(!searchQuery){
+      shotsEl.querySelectorAll(".card.filtered").forEach(el=>el.classList.remove("filtered"));
+      shotsEl.querySelectorAll(".group.filtered-out").forEach(el=>el.classList.remove("filtered-out"));
+      shotsEl.querySelectorAll(".filter-hint").forEach(el=>el.remove());
+      const status = $("#searchStatus"); if(status) status.classList.remove("show");
+      return;
+    }
+    let matched = 0, total = shots.length;
+    shotsEl.querySelectorAll(".card[data-card-id]").forEach(card=>{
+      const id = +card.dataset.cardId;
+      const s = shots.find(x=>x.id===id);
+      const on = s && matchesSearch(s);
+      card.classList.toggle("filtered", !on);
+      if(on) matched++;
+    });
+    // Hide groups where no cards match
+    shotsEl.querySelectorAll(".group").forEach(g=>{
+      const visible = g.querySelectorAll(".card:not(.filtered)").length;
+      g.classList.toggle("filtered-out", visible===0);
+      let hint = g.querySelector(".filter-hint");
+      if(visible===0){
+        if(!hint){
+          hint = document.createElement("span");
+          hint.className = "filter-hint";
+          hint.textContent = "— no matches";
+          const head = g.querySelector(".group-head");
+          if(head) head.appendChild(hint);
+        }
+      } else if(hint){ hint.remove(); }
+    });
+    const status = $("#searchStatus");
+    if(status){
+      status.classList.add("show");
+      $("#searchStatusText").innerHTML = `Showing <b>${matched}</b> of ${total} shot${total===1?"":"s"} matching “${escHtml(searchQuery)}”`;
+    }
+  }
+  function setSearchQuery(q){
+    searchQuery = (q||"").trim();
+    const wrap = $("#searchWrap");
+    if(wrap) wrap.classList.toggle("has-value", searchQuery.length>0);
+    applySearchFilterUI();
+  }
+  function markActive(id){
+    lastActiveShotId = id;
+    // Visual highlight for the active shot (short-lived, updates on next render too)
+    shotsEl.querySelectorAll(".card.last-active").forEach(el=>el.classList.remove("last-active"));
+    const el = shotsEl.querySelector(`.card[data-card-id="${id}"]`);
+    if(el) el.classList.add("last-active");
+  }
+  function applyStatusToActive(status){
+    if(lastActiveShotId==null){
+      // Fall back to the very last shot in the array
+      if(!shots.length) return;
+      lastActiveShotId = shots[shots.length-1].id;
+    }
+    const s = shots.find(x=>x.id===lastActiveShotId);
+    if(!s) return;
+    s.status = status;
+    render(); scheduleSave();
+    const nameMap = {pass:"Pass",fail:"Fail",blocked:"Blocked",untested:"Untested"};
+    toast(`#${shots.indexOf(s)+1} → ${nameMap[status]||status}`, status==="fail"?"err":"ok");
+    // Re-mark active after re-render (render clears the class)
+    markActive(s.id);
+  }
+
   /* ====== model + render ====== */
-  function addShot(dataUrl){ const s={id:++uid,dataUrl,step:"",desc:"",status:"untested",ts:new Date(),caseId:null}; shots.push(s); render(); scheduleSave(); return s; }
+  function addShot(dataUrl){ const s={id:++uid,dataUrl,step:"",desc:"",expected:"",actual:"",bugId:"",status:"untested",ts:new Date(),caseId:null}; shots.push(s); lastActiveShotId = s.id; render(); scheduleSave(); return s; }
 
   /* ====== selection + copy/move to test cases ====== */
   const selected = new Set(); // set of shot ids
@@ -1952,6 +2672,22 @@
           </div>
           ${cases.length?`<select class="case-select" data-case-for="${s.id}" title="Assign to test case">${caseOptionsHtml(s.caseId)}</select>`:""}
         </div>
+        ${isComplianceMode() ? `
+        <div class="compliance-fields">
+          <div class="cf-row">
+            <span class="cf-label">Expected</span>
+            <textarea data-cfield="expected" data-id="${s.id}" placeholder="What should happen">${escHtml(s.expected||"")}</textarea>
+          </div>
+          <div class="cf-row">
+            <span class="cf-label">Actual</span>
+            <textarea data-cfield="actual" data-id="${s.id}" placeholder="What actually happened">${escHtml(s.actual||"")}</textarea>
+          </div>
+          <div class="cf-row">
+            <span class="cf-label">Bug ID</span>
+            <input type="text" data-cfield="bugId" data-id="${s.id}" placeholder="e.g. JIRA-1234 or full URL" value="${escAttr(s.bugId||"")}" />
+            ${s.bugId && /^https?:\/\//.test(s.bugId) ? `<a class="bug-link" href="${escAttr(s.bugId)}" target="_blank" rel="noopener">open ↗</a>` : ""}
+          </div>
+        </div>` : ""}
         <div class="meta">
           <span class="ts">${fmtTime(s.ts)}</span><span class="spacer"></span>
           <button class="icon-btn" title="Move up (within case)" data-act="up" data-id="${s.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg></button>
@@ -1992,6 +2728,8 @@
         : `<input class="case-name" value="${escAttr(g.name)}" data-case-name="${g.id}" placeholder="Test case name" />`;
       const delBtn = g.id==null ? "" :
         `<button class="del-case" data-del-case="${g.id}" title="Delete this test case and all screenshots in it (cannot be undone)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>`;
+      const tcidField = (g.id==null || !isComplianceMode()) ? "" :
+        `<input class="case-tcid" data-case-tcid="${g.id}" value="${escAttr((g.ref&&g.ref.tcid)||"")}" placeholder="TC-ID" title="Test case ID / reference" maxlength="40" />`;
       const includeToggle = g.id==null ? "" :
         `<label class="case-include ${!isExcluded?"on":""}" title="Tick to include this case in Export Word / Export PDF. Untick to leave it out of the next report."><input type="checkbox" data-case-include="${g.id}" ${!isExcluded?"checked":""}/><span>${isExcluded?"Excluded":"Include"}</span></label>`;
       // Per-case Select-all button: tri-state — all/some/none of THIS group is selected
@@ -2015,6 +2753,7 @@
             <span class="chip blocked ${c.blocked?"show":""}">${c.blocked} B</span>
             <span class="chip untested ${c.untested?"show":""}">${c.untested} U</span>
           </span>
+          ${tcidField}
           ${selectAllBtn}
           ${includeToggle}
           ${delBtn}
@@ -2026,6 +2765,18 @@
       shotsEl.appendChild(wrap);
     });
     updateSelectionUI();
+    // Re-apply the current search filter to the freshly-rendered cards
+    applySearchFilterUI();
+    // Preserve the "last-active" highlight after re-render
+    if(lastActiveShotId != null){
+      const el = shotsEl.querySelector(`.card[data-card-id="${lastActiveShotId}"]`);
+      if(el) el.classList.add("last-active");
+    }
+    // Attach drag-handle title to every #idx badge
+    shotsEl.querySelectorAll(".card .idx").forEach(idx=>{
+      idx.setAttribute("draggable","true");
+      idx.setAttribute("title","Drag to reorder");
+    });
   }
   function escHtml(s){ return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
   function escAttr(s){ return (s||"").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
@@ -2033,6 +2784,19 @@
   shotsEl.addEventListener("input",e=>{
     if(e.target.dataset.caseName!=null && e.target.classList.contains("case-name")){
       const c=cases.find(x=>x.id===+e.target.dataset.caseName); if(c){ c.name=e.target.value; renderSummary(); scheduleSave(); } return;
+    }
+    // Test case ID (compliance mode)
+    if(e.target.dataset.caseTcid!=null){
+      const c=cases.find(x=>x.id===+e.target.dataset.caseTcid);
+      if(c){ c.tcid=e.target.value; scheduleSave(); }
+      return;
+    }
+    // Compliance per-shot fields (expected / actual / bugId)
+    const cf=e.target.dataset.cfield;
+    if(cf){
+      const s=shots.find(x=>x.id==e.target.dataset.id);
+      if(s){ s[cf]=e.target.value; scheduleSave(); }
+      return;
     }
     const f=e.target.dataset.field; if(!f) return;
     const s=shots.find(x=>x.id==e.target.dataset.id); if(s){ s[f]=e.target.value; scheduleSave(); }
@@ -2137,9 +2901,175 @@
   $("#btnFull").addEventListener("click",captureFull);
   $("#btnRegion").addEventListener("click",captureRegion);
   $("#btnAddCase").addEventListener("click",()=>{ newCase(); render(); scheduleSave(); toast("Test case added","ok"); });
+  /* ---- Search input wiring ---- */
+  const searchInput = $("#searchInput"), searchClear = $("#searchClear");
+  searchInput.addEventListener("input", ()=>{ setSearchQuery(searchInput.value); });
+  searchClear.addEventListener("click", ()=>{ searchInput.value=""; setSearchQuery(""); searchInput.focus(); });
+  $("#searchStatusClear").addEventListener("click", ()=>{ searchInput.value=""; setSearchQuery(""); });
+
+  /* ---- Keyboard shortcut sheet ---- */
+  const kbdSheet = $("#kbdSheet");
+  $("#kbdBtn").addEventListener("click", ()=>{ kbdSheet.classList.toggle("show"); });
+  $("#kbdClose").addEventListener("click", ()=>{ kbdSheet.classList.remove("show"); });
+
+  /* ---- Global keyboard shortcuts ---- */
+  function isTypingContext(){
+    const el = document.activeElement;
+    if(!el) return false;
+    const tag = el.tagName;
+    if(tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+    if(el.isContentEditable) return true;
+    return false;
+  }
+  document.addEventListener("keydown", (e)=>{
+    // Skip modifier combos (Cmd/Ctrl/Alt) — those belong to browser or copy/paste.
+    // Also skip Shift-combos so Shift+F / Shift+R (capture shortcuts) work without also tagging.
+    if(e.metaKey || e.ctrlKey || e.altKey) return;
+    // Escape closes kbd sheet
+    if(e.key === "Escape" && kbdSheet.classList.contains("show")){
+      kbdSheet.classList.remove("show"); return;
+    }
+    // "/" focuses the search box, but not while typing
+    if(e.key === "/" && !isTypingContext()){
+      e.preventDefault(); searchInput.focus(); searchInput.select(); return;
+    }
+    if(isTypingContext()) return;
+    // If any modal/overlay is open, skip status shortcuts
+    if(document.querySelector(".overlay.open, #copyMoveModal.show, #fpModal.show")) return;
+    // Status tags are unmodified letters only; Shift-combos are for capture shortcuts.
+    if(e.shiftKey) return;
+    const map = {"p":"pass","f":"fail","b":"blocked","u":"untested"};
+    const key = e.key.toLowerCase();
+    if(map[key]){
+      e.preventDefault();
+      applyStatusToActive(map[key]);
+    }
+  });
+
+  /* ---- Clipboard paste anywhere ---- */
+  window.addEventListener("paste", async (e)=>{
+    if(isTypingContext()) return;   // let the input have the paste
+    const items = e.clipboardData && e.clipboardData.items;
+    if(!items) return;
+    for(const it of items){
+      if(it.kind === "file" && it.type && it.type.startsWith("image/")){
+        const file = it.getAsFile();
+        if(!file) continue;
+        e.preventDefault();
+        const reader = new FileReader();
+        reader.onload = (ev)=>{
+          addShot(ev.target.result);
+          toast("Image pasted from clipboard","ok");
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+  });
+
+  /* ---- Track the "active shot" from clicks on cards ---- */
+  shotsEl.addEventListener("click", (e)=>{
+    const card = e.target.closest(".card[data-card-id]");
+    if(card){
+      // Only mark active if we're clicking a genuine card region (not delete etc.)
+      const id = +card.dataset.cardId;
+      if(!isNaN(id)) markActive(id);
+    }
+  }, true);   // capture-phase so we run before the existing click handlers finish
+
+  /* ---- Drag-to-reorder ---- */
+  let dragSrcId = null;
+  shotsEl.addEventListener("dragstart", (e)=>{
+    const handle = e.target.closest(".idx");
+    if(!handle) { e.preventDefault(); return; }
+    const card = handle.closest(".card[data-card-id]");
+    if(!card){ e.preventDefault(); return; }
+    dragSrcId = +card.dataset.cardId;
+    card.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    // Firefox requires setData to initiate drag
+    try{ e.dataTransfer.setData("text/plain", String(dragSrcId)); }catch(_){}
+  });
+  shotsEl.addEventListener("dragend", (e)=>{
+    dragSrcId = null;
+    shotsEl.querySelectorAll(".dragging").forEach(el=>el.classList.remove("dragging"));
+    shotsEl.querySelectorAll(".drop-before, .drop-after").forEach(el=>{ el.classList.remove("drop-before"); el.classList.remove("drop-after"); });
+    shotsEl.querySelectorAll(".drop-target").forEach(el=>el.classList.remove("drop-target"));
+  });
+  shotsEl.addEventListener("dragover", (e)=>{
+    if(dragSrcId==null) return;
+    const card = e.target.closest(".card[data-card-id]");
+    const body = e.target.closest(".group-body, .shots");
+    // Clear previous highlights
+    shotsEl.querySelectorAll(".drop-before, .drop-after").forEach(el=>{ el.classList.remove("drop-before"); el.classList.remove("drop-after"); });
+    shotsEl.querySelectorAll(".drop-target").forEach(el=>el.classList.remove("drop-target"));
+    if(card && +card.dataset.cardId !== dragSrcId){
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const r = card.getBoundingClientRect();
+      const after = e.clientY > r.top + r.height/2;
+      card.classList.add(after ? "drop-after" : "drop-before");
+    } else if(body){
+      // Dropping into an empty case body or in the ungrouped area
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      body.classList.add("drop-target");
+    }
+  });
+  shotsEl.addEventListener("drop", (e)=>{
+    if(dragSrcId==null) return;
+    e.preventDefault();
+    const srcIdx = shots.findIndex(x=>x.id===dragSrcId);
+    if(srcIdx<0) return;
+    const srcShot = shots[srcIdx];
+    const card = e.target.closest(".card[data-card-id]");
+    const bodyEl = e.target.closest(".group-body");
+
+    let targetIdx;      // where to insert in the flat shots[] array
+    let newCaseId;      // the case the shot should belong to after drop
+
+    if(card && +card.dataset.cardId !== dragSrcId){
+      const targetShotId = +card.dataset.cardId;
+      const targetShot = shots.find(x=>x.id===targetShotId);
+      if(!targetShot) return;
+      newCaseId = targetShot.caseId;   // move into the target's case
+      const r = card.getBoundingClientRect();
+      const after = e.clientY > r.top + r.height/2;
+      // Remove src first, then compute the insertion index relative to remaining array
+      shots.splice(srcIdx, 1);
+      let insertPos = shots.findIndex(x=>x.id===targetShotId);
+      if(after) insertPos += 1;
+      shots.splice(insertPos, 0, srcShot);
+      srcShot.caseId = newCaseId;
+    } else if(bodyEl){
+      // Dropped into a case body (not on a specific card) — append to end of that case
+      const groupEl = bodyEl.closest(".group");
+      const gid = groupEl ? groupEl.dataset.gid : "";
+      newCaseId = gid === "" ? null : +gid;
+      shots.splice(srcIdx, 1);
+      // Find the last shot in that case (or where the case block ends)
+      let lastIdx = -1;
+      for(let i=0;i<shots.length;i++) if(shots[i].caseId === newCaseId) lastIdx = i;
+      shots.splice(lastIdx + 1, 0, srcShot);
+      srcShot.caseId = newCaseId;
+    } else {
+      return;
+    }
+    dragSrcId = null;
+    render(); scheduleSave();
+    toast("Reordered","ok");
+  });
+
   resetBtn.addEventListener("click",async()=>{
     if(shots.length&&confirm("Remove all screenshots and clear saved data? This can't be undone.")){
-      shots=[]; cases=[]; uid=0; caseUid=0; selected.clear(); render();
+      shots=[]; cases=[]; uid=0; caseUid=0; selected.clear();
+      // Clear metadata back to defaults but keep tester name (usually same person for many sessions)
+      meta.testingDate = new Date().toISOString().slice(0,10);
+      meta.urlUnderTest=""; meta.buildVersion=""; meta.protocol=""; meta.approver=""; meta.notes="";
+      $("#metaDate").value = meta.testingDate;
+      $("#metaUrl").value=""; $("#metaBuild").value=""; $("#metaProtocol").value=""; $("#metaApprover").value=""; $("#metaNotes").value="";
+      updateMetaSummary();
+      render();
       if(db&&supportsDB){ try{ await new Promise(res=>{ const tx=db.transaction(STORE,"readwrite"); tx.objectStore(STORE).delete(KEY); tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
       setSaveState("saved");
     }
@@ -2149,8 +3079,8 @@
     if(annot.classList.contains("open")){ if(e.key==="Escape") closeAnnot(); return; }
     if(cropper.classList.contains("open")){ if(e.key==="Escape") closeCropper(); return; }
     if($("#lightbox").classList.contains("open")){ if(e.key==="Escape") $("#lightbox").classList.remove("open"); return; }
-    if(e.key==="r"||e.key==="R"){ e.preventDefault(); captureRegion(); }
-    if(e.key==="f"||e.key==="F"){ e.preventDefault(); captureFull(); }
+    if(e.key==="r"||e.key==="R"){ if(!e.shiftKey) return; e.preventDefault(); captureRegion(); }
+    if(e.key==="f"||e.key==="F"){ if(!e.shiftKey) return; e.preventDefault(); captureFull(); }
   });
 
   /* ====== export ====== */
@@ -2168,6 +3098,29 @@
     const children=[];
     children.push(new D.Paragraph({ text:title, heading:D.HeadingLevel.TITLE }));
     children.push(new D.Paragraph({ spacing:{after:160}, children:[ new D.TextRun({ text:`Generated ${new Date().toLocaleString()} \u00B7 ${allShots.length} screenshot(s) \u00B7 ${groupsToInclude.length} group(s)`, italics:true, color:"6B6557", size:20 }) ] }));
+    // ---- Compliance-mode cover page: tester, environment, protocol, approver ----
+    if(isComplianceMode()){
+      const kv = (label, val) => new D.Paragraph({ spacing:{after:60}, children:[
+        new D.TextRun({ text: label + ": ", bold:true, size:20, color:"14213D" }),
+        new D.TextRun({ text: val || "\u2014", size:20, color:"14213D" })
+      ] });
+      children.push(new D.Paragraph({ heading:D.HeadingLevel.HEADING_2, spacing:{before:120,after:80}, children:[ new D.TextRun({ text:"Test Report Metadata" }) ] }));
+      children.push(kv("Tester",         meta.tester));
+      children.push(kv("Testing date",   meta.testingDate));
+      children.push(kv("URL under test", meta.urlUnderTest));
+      children.push(kv("Build / version",meta.buildVersion));
+      children.push(kv("Test protocol",  meta.protocol));
+      children.push(kv("Approver",       meta.approver));
+      children.push(kv("Browser",        detectedEnv.browser));
+      children.push(kv("Operating system", detectedEnv.os));
+      if(meta.notes && meta.notes.trim()){
+        children.push(new D.Paragraph({ spacing:{before:80,after:40}, children:[ new D.TextRun({ text:"Environment notes:", bold:true, size:20, color:"14213D" }) ] }));
+        meta.notes.split(/\n/).forEach(line=>{
+          children.push(new D.Paragraph({ spacing:{after:40}, children:[ new D.TextRun({ text:line, size:20, color:"14213D" }) ] }));
+        });
+      }
+      children.push(new D.Paragraph({ spacing:{after:120}, children:[] }));
+    }
     const cell=(text,bold,color)=> new D.TableCell({ margins:{top:60,bottom:60,left:120,right:120}, children:[ new D.Paragraph({ children:[ new D.TextRun({ text:String(text), bold:!!bold, color:color||"14213D", size:20 }) ] }) ] });
     const hdr=(t)=> new D.TableCell({ shading:{fill:"14213D"}, margins:{top:60,bottom:60,left:120,right:120}, children:[ new D.Paragraph({ children:[ new D.TextRun({ text:t, bold:true, color:"FFFFFF", size:20 }) ] }) ] });
     // overall summary
@@ -2190,7 +3143,8 @@
     for(const g of groupsToInclude){
       if(showGroupHeadings){
         const gc={pass:0,fail:0,blocked:0,untested:0}; g.items.forEach(s=>gc[s.status]++);
-        children.push(new D.Paragraph({ heading:D.HeadingLevel.HEADING_1, spacing:{before:320,after:40}, pageBreakBefore: caseIdx>0, children:[ new D.TextRun({ text:g.name }) ] }));
+        const caseTitleText = (isComplianceMode() && g.ref && g.ref.tcid) ? `${g.ref.tcid} \u2014 ${g.name}` : g.name;
+        children.push(new D.Paragraph({ heading:D.HeadingLevel.HEADING_1, spacing:{before:320,after:40}, pageBreakBefore: caseIdx>0, children:[ new D.TextRun({ text:caseTitleText }) ] }));
         children.push(new D.Paragraph({ spacing:{after:120}, children:[ new D.TextRun({ text:`${g.items.length} screenshot(s) \u2014 `, italics:true, color:"6B6557", size:20 }),
           new D.TextRun({ text:`${gc.pass} pass, ${gc.fail} fail, ${gc.blocked} blocked, ${gc.untested} untested`, italics:true, color:"6B6557", size:20 }) ] }));
       }
@@ -2206,6 +3160,30 @@
         children.push(new D.Paragraph({ spacing:{after:80}, children:[ new D.ImageRun({ data:dataUrlToUint8(s.dataUrl), transformation:{width:w,height:h} }) ] }));
         const dt=s.desc.trim();
         if(dt) dt.split(/\n/).forEach(line=> children.push(new D.Paragraph({ spacing:{after:40}, children:[ new D.TextRun({ text:line, size:22 }) ] })));
+        // ---- Compliance: Expected / Actual / Bug ID ----
+        if(isComplianceMode()){
+          const kvBlock = (label, text) => {
+            if(!text || !text.trim()) return;
+            children.push(new D.Paragraph({ spacing:{before:60,after:20}, children:[
+              new D.TextRun({ text: label + ":", bold:true, size:20, color:"6B6557" })
+            ] }));
+            text.split(/\n/).forEach(line=>{
+              children.push(new D.Paragraph({ spacing:{after:30}, indent:{left:280}, children:[ new D.TextRun({ text:line, size:20 }) ] }));
+            });
+          };
+          kvBlock("Expected", s.expected);
+          kvBlock("Actual",   s.actual);
+          if(s.bugId && s.bugId.trim()){
+            const bug = s.bugId.trim();
+            const isUrl = /^https?:\/\//.test(bug);
+            children.push(new D.Paragraph({ spacing:{before:60,after:40}, children:[
+              new D.TextRun({ text: "Bug ID: ", bold:true, size:20, color:"6B6557" }),
+              isUrl
+                ? new D.ExternalHyperlink({ link: bug, children:[ new D.TextRun({ text: bug, size:20, color:"2F6FE0", underline:{} }) ] })
+                : new D.TextRun({ text: bug, size:20, color:"14213D" })
+            ] }));
+          }
+        }
         children.push(new D.Paragraph({ spacing:{after:120}, border:{ bottom:{ color:"D8D3C7", space:8, style:D.BorderStyle.SINGLE, size:6 } }, children:[ new D.TextRun({ text:`Captured: ${fmtTime(s.ts)}`, italics:true, color:"9A9486", size:18 }) ] }));
       }
     }
@@ -2279,13 +3257,35 @@
     const chip=(label,val,col)=>{ const txt=`${label}: ${val}`; const w=font.widthOfTextAtSize(txt,10)+16; page.drawRectangle({x:cx,y:y-18,width:w,height:16,color:col,opacity:1,borderColor:col}); page.drawText(txt,{x:cx+8,y:y-15,size:10,font:bold,color:rgb(1,1,1)}); cx+=w+8; };
     chip("Total",allShots.length,INK); chip("Pass",overall.pass,STAT_RGB.pass); chip("Fail",overall.fail,STAT_RGB.fail); chip("Blocked",overall.blocked,STAT_RGB.blocked); chip("Untested",overall.untested,STAT_RGB.untested);
     y-=30;
+    // ---- Compliance metadata block ----
+    if(isComplianceMode()){
+      ensure(24);
+      page.drawText("Test Report Metadata",{x:M,y:y-13,size:12,font:bold,color:INK});
+      y-=22;
+      const kv = (label, val) => {
+        drawText(`${label}: ${val || "\u2014"}`, font, 10, INK, CONTENT_W, 3);
+      };
+      kv("Tester",           meta.tester);
+      kv("Testing date",     meta.testingDate);
+      kv("URL under test",   meta.urlUnderTest);
+      kv("Build / version",  meta.buildVersion);
+      kv("Test protocol",    meta.protocol);
+      kv("Approver",         meta.approver);
+      kv("Browser",          detectedEnv.browser);
+      kv("Operating system", detectedEnv.os);
+      if(meta.notes && meta.notes.trim()){
+        drawText("Environment notes:", bold, 10, INK, CONTENT_W, 3);
+        drawText(meta.notes, font, 10, INK, CONTENT_W, 3);
+      }
+      y-=10; ensure(6); page.drawLine({start:{x:M,y},end:{x:PAGE_W-M,y},thickness:1,color:LINE}); y-=14;
+    }
     let n=0;
     const showGroupHeadings = groupsToInclude.length>1 || (groupsToInclude[0] && groupsToInclude[0].id!=null);
     for(const g of groupsToInclude){
       if(showGroupHeadings){
         ensure(40);
         y-=6; page.drawLine({start:{x:M,y},end:{x:PAGE_W-M,y},thickness:1,color:LINE}); y-=18;
-        page.drawText(g.name,{x:M,y:y-14,size:15,font:bold,color:INK}); y-=20;
+        page.drawText((isComplianceMode() && g.ref && g.ref.tcid) ? `${g.ref.tcid} \u2014 ${g.name}` : g.name,{x:M,y:y-14,size:15,font:bold,color:INK}); y-=20;
         const gc={pass:0,fail:0,blocked:0,untested:0}; g.items.forEach(s=>gc[s.status]++);
         drawText(`${g.items.length} screenshot(s) \u2014 ${gc.pass} pass, ${gc.fail} fail, ${gc.blocked} blocked, ${gc.untested} untested`, ital,9,MUTED,CONTENT_W,5);
         y-=4;
@@ -2301,6 +3301,23 @@
         if(ih>PAGE_H-M*2){ const fit=(PAGE_H-M*2)/ih; iw*=fit; ih*=fit; }
         ensure(ih+10); page.drawImage(png,{x:M,y:y-ih,width:iw,height:ih}); y-=ih+8;
         const dt=s.desc.trim(); if(dt){ drawText(dt,font,11,INK,CONTENT_W,4); }
+        // ---- Compliance: Expected / Actual / Bug ID ----
+        if(isComplianceMode()){
+          const kvBlockPdf = (label, text) => {
+            if(!text || !text.trim()) return;
+            y-=2;
+            drawText(label + ":", bold, 9, MUTED, CONTENT_W, 2);
+            drawText(text, font, 10, INK, CONTENT_W-16, 3);
+          };
+          kvBlockPdf("Expected", s.expected);
+          kvBlockPdf("Actual",   s.actual);
+          if(s.bugId && s.bugId.trim()){
+            y-=2;
+            const bug = s.bugId.trim();
+            const isUrl = /^https?:\/\//.test(bug);
+            drawText("Bug ID: " + bug, font, 10, isUrl ? hex("2F6FE0") : INK, CONTENT_W, 3);
+          }
+        }
         drawText(`Captured: ${fmtTime(s.ts)}`,ital,8,hex("9A9486"),CONTENT_W,3);
         y-=4; ensure(6); page.drawLine({start:{x:M,y},end:{x:PAGE_W-M,y},thickness:0.7,color:LINE}); y-=12;
       }
@@ -2351,6 +3368,8 @@
     db=await openDB();
     setSaveState("saved");
     await loadSaved();
+    // ---- Wire up the report metadata panel ----
+    initMetaPanelUI();
     render();
     showCaptureBanner();
     // surface library load failures upfront, not after a failed export
@@ -2370,5 +3389,7 @@
   })();
 })();
 </script>
+<div id="creditFooter">Designed by <b>Raghuvardhan</b>, built with AI Assist</div>
+
 </body>
 </html>
