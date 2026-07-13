@@ -399,6 +399,26 @@
 
   /* copy/move modal */
   #copyMoveModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(20,33,61,.5);align-items:center;justify-content:center;padding:20px}
+
+  /* ---- Session import modal ---- */
+  #imModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(20,33,61,.5);align-items:center;justify-content:center;padding:20px}
+  #imModal.show{display:flex}
+  #imModal .im-box{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:min(560px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+  #imModal .im-head{padding:16px 22px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  #imModal .im-head h2{font-size:18px;color:var(--ink);font-weight:650;margin:0;letter-spacing:-.01em}
+  #imModal .im-close{margin-left:auto;border:none;background:transparent;color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:20px;line-height:1}
+  #imModal .im-close:hover{background:var(--paper);color:var(--ink)}
+  #imModal .im-body{padding:16px 22px;overflow-y:auto;flex:1}
+  #imModal .im-intro{margin:0 0 12px;font-size:13px;color:var(--muted);line-height:1.5}
+  #imModal .im-summary{background:var(--paper);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--ink);display:flex;flex-direction:column;gap:6px;line-height:1.5}
+  #imModal .im-summary b{color:var(--muted);font-weight:600;letter-spacing:.3px;text-transform:uppercase;font-size:11px;min-width:80px;display:inline-block}
+  #imModal .im-warn{margin-top:10px;padding:10px 12px;background:#fbefec;border:1px solid #e8c7be;border-radius:8px;font-size:12px;color:#8c2e1f;line-height:1.4}
+  #imModal .im-foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;background:var(--paper);flex-wrap:wrap}
+  #imModal .im-sp{flex:1}
+  #imModal .im-foot button{font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink)}
+  #imModal .im-foot button:hover:not(:disabled){border-color:var(--ink)}
+  #imModal .im-foot button.danger{background:#fff;border-color:#c0392b;color:#c0392b}
+  #imModal .im-foot button.danger:hover{background:#c0392b;color:#fff}
   #copyMoveModal.show{display:flex}
   #copyMoveModal .box{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:min(520px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
   #copyMoveModal .head{padding:18px 22px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
@@ -440,7 +460,7 @@
       <circle class="dot" cx="17" cy="17" r="2.4"/>
     </svg>
     <span class="logo-text"><span class="logo-now">Now</span><span class="logo-cap">Captures</span></span>
-    <span class="ver">v4.2 · thumb layout fix</span>
+    <span class="ver">v4.3 · session handoff</span>
   </div>
   <div class="doc-title-wrap"><label for="docTitle">Report</label><input id="docTitle" value="Test Evidence Report" spellcheck="false" /></div>
   <div class="save-state" id="saveState"><span class="pip"></span><span id="saveText">Saved</span></div>
@@ -554,6 +574,15 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>
       Export Word (.docx)
     </button>
+    <button class="btn" id="btnSessionExport" disabled title="Save this session (shots, cases, metadata) as a .ncap.json file to share with another tester">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      Export session
+    </button>
+    <button class="btn" id="btnSessionImport" title="Load a session .ncap.json exported by another tester">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      Import session
+    </button>
+    <input type="file" id="sessionFileInput" accept=".json,.ncap.json,application/json" style="display:none" />
   </div>
 
   <div class="summary" id="summary"></div>
@@ -637,6 +666,26 @@
 </div>
 
 <!-- copy/move to test case modal -->
+<!-- session import modal — shown after picking a valid .ncap.json file -->
+<div id="imModal" role="dialog" aria-modal="true" aria-labelledby="imTitle">
+  <div class="im-box">
+    <div class="im-head">
+      <h2 id="imTitle">Import session</h2>
+      <button class="im-close" id="imClose" title="Cancel">×</button>
+    </div>
+    <div class="im-body">
+      <p class="im-intro">You're about to import a session file. Review what's inside, then choose how to load it:</p>
+      <div class="im-summary" id="imSummary"></div>
+    </div>
+    <div class="im-foot">
+      <button id="imCancel">Cancel</button>
+      <span class="im-sp"></span>
+      <button id="imMerge" title="Add the imported shots and cases alongside your current session">Merge with current</button>
+      <button id="imReplace" class="danger" title="Replace everything in the current session with the imported data — cannot be undone">Replace current</button>
+    </div>
+  </div>
+</div>
+
 <div id="copyMoveModal" role="dialog" aria-modal="true" aria-labelledby="cmTitle">
   <div class="box">
     <div class="head">
@@ -2702,6 +2751,7 @@
     const has=shots.length>0;
     emptyEl.style.display=has?"none":"block";
     exportBtn.disabled=!has; exportPdfBtn.disabled=!has; resetBtn.disabled=!has;
+    if(sessionExportBtn) sessionExportBtn.disabled = !has;
     if(btnSelectAll) btnSelectAll.disabled=!has;
     pruneSelection();   // single source of truth for "what counts as selected"
     $("#caseBar").style.display=has?"flex":"none";
@@ -3059,6 +3109,177 @@
     render(); scheduleSave();
     toast("Reordered","ok");
   });
+
+  /* ====== Session export / import (JSON handoff between testers) ====== */
+  const sessionExportBtn = $("#btnSessionExport");
+  const sessionImportBtn = $("#btnSessionImport");
+  const sessionFileInput = $("#sessionFileInput");
+  const imModal = $("#imModal");
+  let pendingImportPayload = null;   // set by importSessionFromFile, consumed by applyImport
+
+  function safeName(s){ return (s||"session").replace(/[^\w\-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80) || "session"; }
+
+  function exportSession(){
+    if(!shots.length){ toast("Nothing to export — capture a shot first.","err"); return; }
+    // Deep-clone data + freeze timestamps as ISO strings
+    const payload = {
+      format: "now-captures-session",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      exportedFrom: {
+        tester: meta.tester || "",
+        browser: detectedEnv.browser,
+        os: detectedEnv.os,
+        toolVersion: ($(".ver") && $(".ver").textContent) || ""
+      },
+      title: $("#docTitle").value || "Test Evidence Report",
+      meta: (()=>{ const m={...meta}; delete m.metaCollapsed; return m; })(),
+      cases: cases.map(c=>({ id:c.id, name:c.name, tcid:c.tcid||"", excluded:!!c.excluded })),
+      shots: shots.map(s=>({
+        id:s.id, dataUrl:s.dataUrl,
+        step:s.step||"", desc:s.desc||"",
+        expected:s.expected||"", actual:s.actual||"", bugId:s.bugId||"",
+        status:s.status||"untested",
+        ts:(s.ts instanceof Date ? s.ts.toISOString() : s.ts),
+        caseId:s.caseId!=null?s.caseId:null,
+        clipFilename:s.clipFilename||undefined, clipDuration:s.clipDuration||undefined
+      }))
+    };
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const testerPart = meta.tester ? safeName(meta.tester) + "_" : "";
+    const titlePart  = safeName($("#docTitle").value);
+    const datePart   = new Date().toISOString().slice(0,10);
+    const filename   = `${testerPart}${titlePart}_${datePart}.ncap.json`;
+    saveAs(blob, filename);
+    const kb = Math.round(blob.size/1024);
+    toast(`Session exported: ${shots.length} shot${shots.length===1?"":"s"}, ${cases.length} case${cases.length===1?"":"s"} (${kb} KB)`, "ok");
+  }
+
+  async function importSessionFromFile(file){
+    if(!file) return;
+    let text;
+    try{ text = await file.text(); }
+    catch(e){ toast("Could not read file.","err"); return; }
+    let payload;
+    try{ payload = JSON.parse(text); }
+    catch(e){ toast("Not valid JSON — try re-exporting the file.","err"); return; }
+    if(!payload || payload.format !== "now-captures-session"){
+      toast("This doesn't look like a Now Captures session file.","err"); return;
+    }
+    // Basic shape check
+    if(!Array.isArray(payload.shots) || !Array.isArray(payload.cases)){
+      toast("Session file is missing 'shots' or 'cases'.","err"); return;
+    }
+    pendingImportPayload = payload;
+    openImportModal(payload);
+  }
+
+  function openImportModal(payload){
+    const nShots = payload.shots.length;
+    const nCases = payload.cases.length;
+    const from   = payload.exportedFrom || {};
+    const rows = [
+      ["From tester",   from.tester || "\u2014"],
+      ["Exported",      payload.exportedAt ? new Date(payload.exportedAt).toLocaleString() : "\u2014"],
+      ["Tool version",  from.toolVersion || "\u2014"],
+      ["Environment",   [from.browser, from.os].filter(Boolean).join(" \u00B7 ") || "\u2014"],
+      ["Report title",  payload.title || "\u2014"],
+      ["Contains",      `${nShots} shot${nShots===1?"":"s"}, ${nCases} case${nCases===1?"":"s"}`]
+    ];
+    const html = rows.map(([k,v])=>`<div><b>${k}:</b> ${escHtml(String(v))}</div>`).join("");
+    const warn = shots.length
+      ? `<div class="im-warn"><b>You have ${shots.length} shot${shots.length===1?"":"s"} in this session.</b> Replace will remove them permanently. Merge will add the imported shots alongside them (with unique IDs so nothing collides).</div>`
+      : "";
+    $("#imSummary").innerHTML = html + warn;
+    imModal.classList.add("show");
+  }
+  function closeImportModal(){ imModal.classList.remove("show"); pendingImportPayload = null; }
+
+  function applyImport(mode){
+    if(!pendingImportPayload) return;
+    const p = pendingImportPayload;
+    if(mode === "replace"){
+      // Full replace: nuke existing state, load imported
+      cases = (p.cases || []).map(c => ({
+        id: c.id, name: c.name || "Case",
+        tcid: c.tcid || "", collapsed: false, excluded: !!c.excluded
+      }));
+      shots = (p.shots || []).map(s => ({
+        id: s.id, dataUrl: s.dataUrl,
+        step: s.step || "", desc: s.desc || "",
+        expected: s.expected || "", actual: s.actual || "", bugId: s.bugId || "",
+        status: s.status || "untested",
+        ts: s.ts ? new Date(s.ts) : new Date(),
+        caseId: s.caseId != null ? s.caseId : null,
+        clipFilename: s.clipFilename, clipDuration: s.clipDuration
+      }));
+      // Preserve caseId integrity: any shot referencing an unknown caseId → Ungrouped
+      const validCaseIds = new Set(cases.map(c=>c.id));
+      shots.forEach(s=>{ if(s.caseId != null && !validCaseIds.has(s.caseId)) s.caseId = null; });
+      uid     = shots.reduce((m,s)=>Math.max(m, s.id||0), 0);
+      caseUid = cases.reduce((m,c)=>Math.max(m, c.id||0), 0);
+      if(p.meta) Object.assign(meta, p.meta);
+      if(p.title) $("#docTitle").value = p.title;
+    } else {
+      // Merge: remap IDs so we never collide with existing data
+      const caseIdMap = new Map();
+      (p.cases || []).forEach(c => {
+        const newId = ++caseUid;
+        caseIdMap.set(c.id, newId);
+        cases.push({
+          id: newId, name: (c.name || "Case") + " (imported)",
+          tcid: c.tcid || "", collapsed: false, excluded: !!c.excluded
+        });
+      });
+      (p.shots || []).forEach(s => {
+        const newId = ++uid;
+        const mappedCase = s.caseId != null ? caseIdMap.get(s.caseId) : null;
+        shots.push({
+          id: newId, dataUrl: s.dataUrl,
+          step: s.step || "", desc: s.desc || "",
+          expected: s.expected || "", actual: s.actual || "", bugId: s.bugId || "",
+          status: s.status || "untested",
+          ts: s.ts ? new Date(s.ts) : new Date(),
+          caseId: mappedCase != null ? mappedCase : null,
+          clipFilename: s.clipFilename, clipDuration: s.clipDuration
+        });
+      });
+    }
+    // Refresh meta panel inputs to reflect any new values
+    const inputMap = { tester:"#metaTester", testingDate:"#metaDate", urlUnderTest:"#metaUrl",
+                       buildVersion:"#metaBuild", protocol:"#metaProtocol",
+                       approver:"#metaApprover", notes:"#metaNotes" };
+    Object.entries(inputMap).forEach(([k, sel])=>{
+      const el = $(sel); if(el) el.value = meta[k] || "";
+    });
+    if(typeof updateMetaSummary === "function") updateMetaSummary();
+    closeImportModal();
+    render(); scheduleSave();
+    const nShots = (p.shots || []).length;
+    toast(`Import complete: ${mode==="replace"?"replaced with":"merged"} ${nShots} shot${nShots===1?"":"s"}`, "ok");
+  }
+
+  if(sessionExportBtn) sessionExportBtn.addEventListener("click", exportSession);
+  if(sessionImportBtn) sessionImportBtn.addEventListener("click", ()=>{
+    // Reset the input value so the same file can be selected again if needed
+    sessionFileInput.value = "";
+    sessionFileInput.click();
+  });
+  if(sessionFileInput) sessionFileInput.addEventListener("change", (e)=>{
+    const f = e.target.files && e.target.files[0];
+    if(f) importSessionFromFile(f);
+  });
+  if(imModal){
+    $("#imClose").addEventListener("click", closeImportModal);
+    $("#imCancel").addEventListener("click", closeImportModal);
+    imModal.addEventListener("click", e=>{ if(e.target === imModal) closeImportModal(); });
+    $("#imMerge").addEventListener("click", ()=> applyImport("merge"));
+    $("#imReplace").addEventListener("click", ()=>{
+      if(shots.length && !confirm(`Replace the current session and permanently delete ${shots.length} existing shot${shots.length===1?"":"s"}?`)) return;
+      applyImport("replace");
+    });
+  }
 
   resetBtn.addEventListener("click",async()=>{
     if(shots.length&&confirm("Remove all screenshots and clear saved data? This can't be undone.")){
