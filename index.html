@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Now Captures — Screenshot evidence to Word &amp; PDF</title>
-<link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34"><path d="M3 9V4h5M26 4h5v5M31 25v5h-5M8 30H3v-5" stroke="%2314213d" stroke-width="2.6" stroke-linecap="round" fill="none"/><circle cx="17" cy="17" r="6.8" fill="%23e07a2f"/><circle cx="17" cy="17" r="2.4" fill="%23fff"/></svg>'>
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34"><path d="M3 9V4h5M26 4h5v5M31 25v5h-5M8 30H3v-5" stroke="%23e07a2f" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="17" cy="17" r="6.5" stroke="%2314213d" stroke-width="3" fill="none"/><path d="M17 6V9M17 28V25M6 17H9M28 17H25" stroke="%2314213d" stroke-width="3" stroke-linecap="round"/><circle cx="17" cy="17" r="2.2" fill="%2314213d"/></svg>'>
 <!-- libraries: try cdnjs, then jsdelivr, then unpkg. The export buttons check
      window.docx / window.PDFLib before running and tell you which one is missing. -->
 <script>
@@ -65,9 +65,9 @@
   }
   .brand{display:flex;align-items:center;gap:11px}
   .brand .logo-mark{flex:none;display:block}
-  .brand .logo-mark .frame{stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;fill:none}
-  .brand .logo-mark .ring{fill:var(--accent)}
-  .brand .logo-mark .dot{fill:#fff}
+  .brand .logo-mark .frame{stroke:var(--accent);stroke-width:3;stroke-linecap:round;fill:none}
+  .brand .logo-mark .mark-t{stroke:var(--ink);stroke-width:3;stroke-linecap:round;fill:none}
+  .brand .logo-mark .mark-dot{fill:var(--ink)}
   .brand .logo-text{display:flex;align-items:baseline;gap:2px;font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1;font-family:var(--sans)}
   .brand .logo-now{color:var(--accent)}
   .brand .logo-cap{color:var(--ink)}
@@ -182,6 +182,7 @@
   #annotCanvas.tool-select.hover-shape{cursor:move}
   #annotCanvas.tool-select.dragging{cursor:grabbing}
   #annotCanvas.tool-text{cursor:text}
+  #annotCanvas.tool-crop{cursor:crosshair}
   /* Inline text editor that appears over the annotation canvas while typing */
   #annotTextInput{position:absolute;background:rgba(255,255,255,.98);border:2px solid var(--accent);border-radius:6px;padding:4px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:600;box-shadow:0 4px 14px rgba(20,33,61,.25);outline:none;min-width:120px;max-width:70vw;z-index:110;line-height:1.15}
   #annotTextInput::placeholder{color:#b6b0a1;font-weight:500}
@@ -208,6 +209,36 @@
 
   /* test-case groups */
   .case-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+
+  /* ---- Focus mode: sidebar + single-case center ---- */
+  #layoutWrap{display:block}
+  #caseNav{display:none}
+  @media(min-width:1100px){
+    #layoutWrap.nav-on{display:grid;grid-template-columns:224px minmax(0,1fr);gap:18px;align-items:start}
+    #layoutWrap.nav-on #caseNav{display:block;position:sticky;top:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 8px;box-shadow:var(--shadow)}
+  }
+  #caseNav .nav-head{display:flex;align-items:center;justify-content:space-between;padding:0 8px 8px}
+  #caseNav .nav-title{font-size:10.5px;font-weight:700;letter-spacing:.6px;color:var(--muted)}
+  #caseNav .nav-sec{font-size:10.5px;font-weight:700;letter-spacing:.4px;color:var(--muted);padding:8px 8px 3px;border-top:1px solid var(--line);margin-top:6px}
+  #caseNav .nav-sec:first-of-type{border-top:none;margin-top:0}
+  #caseNav .nav-row{padding:7px 8px;border-radius:9px;cursor:pointer;margin:1px 0}
+  #caseNav .nav-row:hover{background:var(--paper)}
+  #caseNav .nav-row.on{background:#fff3e8;outline:1px solid var(--accent)}
+  #caseNav .nav-row.drop-ok{background:#fff3e8;outline:2px dashed var(--accent)}
+  #caseNav .nav-name{font-size:12.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px;min-width:0}
+  #caseNav .nav-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #caseNav .nav-row.done .nav-name{color:var(--muted);font-weight:500}
+  #caseNav .nav-check{color:#2F7D4F;flex:none;font-size:12px}
+  #caseNav .nav-meta{display:flex;gap:4px;align-items:center;margin-top:3px;flex-wrap:wrap}
+  #caseNav .nav-sub{font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+  #caseNav .chip{font-size:9.5px;font-weight:700;border-radius:8px;padding:0 5px;line-height:15px}
+  #caseNav .chip.p{background:#e7f2ea;color:#2F7D4F}
+  #caseNav .chip.f{background:#fbeceb;color:#C0392B}
+  #caseNav .chip.b{background:#f7efdc;color:#8a6508}
+  #caseNav .chip.u{background:var(--paper);color:var(--muted)}
+  .shots.focus-on .group{display:none}
+  .shots.focus-on .group.focused{display:block}
+  #btnFocusMode.on{background:var(--accent);border-color:var(--accent);color:#fff}
   .group{margin-bottom:26px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
   .group-head{display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(0deg,rgba(224,122,47,.04),rgba(224,122,47,.04)),#fff;border-bottom:1px solid var(--line);cursor:pointer;flex-wrap:wrap}
   .group-head .caret{transition:transform .15s;color:var(--muted);flex:none}
@@ -483,11 +514,12 @@
   <div class="brand">
     <svg class="logo-mark" width="34" height="34" viewBox="0 0 34 34" aria-label="Now Captures logo" role="img">
       <path class="frame" d="M3 9V4h5M26 4h5v5M31 25v5h-5M8 30H3v-5"/>
-      <circle class="ring" cx="17" cy="17" r="6.5"/>
-      <circle class="dot" cx="17" cy="17" r="2.4"/>
+      <circle class="mark-t" cx="17" cy="17" r="6.5"/>
+      <path class="mark-t" d="M17 6V9M17 28V25M6 17H9M28 17H25"/>
+      <circle class="mark-dot" cx="17" cy="17" r="2.2"/>
     </svg>
     <span class="logo-text"><span class="logo-now">Now</span><span class="logo-cap">Captures</span></span>
-    <span class="ver">v4.4 · onboarding</span>
+    <span class="ver">v4.9.2 · 2-min clips</span>
   </div>
   <div class="doc-title-wrap"><label for="docTitle">Report</label><input id="docTitle" value="Test Evidence Report" spellcheck="false" /></div>
   <div class="save-state" id="saveState"><span class="pip"></span><span id="saveText">Saved</span></div>
@@ -566,7 +598,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
         Live capture
       </button>
-      <button class="btn" id="btnClip" title="Record a short screen clip (max 30 seconds). Saved to disk as .webm; a still frame is added to your gallery.">
+      <button class="btn" id="btnClip" title="Record a screen clip (max 2 minutes). Saved to disk as .webm; a still frame is added to your gallery.">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
         Record clip
       </button>
@@ -601,7 +633,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>
       Export Word (.docx)
     </button>
-    <button class="btn" id="btnSessionExport" disabled title="Save this session (shots, cases, metadata) as a .ncap.json file to share with another tester">
+    <button class="btn" id="btnSessionExport" disabled title="Save this session as a .ncap.json file to share with another tester. Only cases ticked Include are exported; Ungrouped shots always travel with the session.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
       Export session
     </button>
@@ -615,6 +647,7 @@
   <div class="summary" id="summary"></div>
 
   <div class="case-bar" id="caseBar" style="display:none">
+    <button class="btn" id="btnFocusMode" title="Focus mode: show one test case at a time with a case list on the left. All view: the classic full scroll.">Focus mode</button>
     <button class="btn" id="btnAddCase">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h10"/><path d="M19 15v6M16 18h6"/></svg>
       Add test case
@@ -665,7 +698,10 @@
     <span class="sp"></span>
     <button id="demoClearBtn">Clear demo</button>
   </div>
-  <div id="shots" class="shots"></div>
+  <div id="layoutWrap">
+    <aside id="caseNav" aria-label="Test case navigator"></aside>
+    <div id="shots" class="shots"></div>
+  </div>
 </main>
 
 <!-- region cropper -->
@@ -689,6 +725,7 @@
       <button data-t="highlight" title="Highlighter — translucent fill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15 4 21l3-8 9-9a2.828 2.828 0 1 1 4 4l-8 8-3-1z"/></svg>Highlight</button>
       <button data-t="pen" title="Freehand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7-3-3-7 7-1 4z"/><path d="M16 9l3-3"/></svg>Pen</button>
       <button data-t="text" title="Text label — click to place, type to enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>Text</button>
+      <button data-t="crop" title="Crop — drag a region to keep, then Apply crop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14"/></svg>Crop</button>
     </div>
     <div class="swatches" id="annotColors"></div>
     <div class="width-seg" id="annotWidth" title="Stroke width for shapes">
@@ -697,6 +734,14 @@
       <button data-w="2" title="Thick">L</button>
     </div>
     <span class="label"></span>
+    <button class="btn" id="annotCropApply" style="display:none;background:#e07a2f;border-color:#e07a2f;color:#fff" title="Crop the image down to the selected region (Esc to cancel the selection)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14"/></svg>
+      Apply crop
+    </button>
+    <button class="btn" id="annotCropRevert" style="display:none" title="Undo all crops and restore the full image">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      Revert crop
+    </button>
     <button class="btn" id="annotDelete" style="display:none;background:#c0392b;border-color:#c0392b;color:#fff" title="Delete selected shape (Del)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
       Delete shape
@@ -785,6 +830,8 @@
   let lastActiveShotId = null;   // last captured/clicked shot — target for keyboard status shortcuts
   let searchQuery = "";          // current filter text; empty = no filter
   let demoMode = false;          // true while sample/demo shots are loaded
+  let focusMode = false;         // sidebar + one-case-at-a-time view (persisted in meta)
+  let focusCaseId;               // id of the focused case; null = Ungrouped; undefined = auto-pick
 
   // ---- Report metadata (persisted) ----
   const meta = {
@@ -1018,6 +1065,21 @@
   .fp-rec-title{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:700;color:#7a4a18;letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px}
   .fp-rec-dot{width:10px;height:10px;border-radius:50%;background:#e02f2f;animation:capPulse 1.2s infinite}
   .fp-rec-count{font-size:26px;font-weight:800;color:#14213d;line-height:1.1;margin-bottom:2px}
+  .fp-bar-wrap{display:flex;gap:11px;align-items:stretch;margin:4px 0 12px;height:104px}
+  .fp-bar-track{width:24px;flex:none;background:#f0e6d8;border:1px solid #d8d3c7;border-radius:7px;position:relative;overflow:hidden}
+  .fp-bar-fill{position:absolute;left:0;right:0;bottom:0;height:100%;background:linear-gradient(180deg,#f0a05c,#e07a2f);transition:height .09s linear}
+  .fp-bar-track.lost .fp-bar-fill{background:#c0392b;transition:none}
+  .fp-bar-track.flash{border-color:#2f7d4f}
+  .fp-bar-track.flash .fp-bar-fill{background:#2f7d4f;transition:none}
+  .fp-bar-side{flex:1;display:flex;flex-direction:column;justify-content:center;gap:3px;text-align:left;min-width:0}
+  .fp-bar-count{font-size:20px;font-weight:800;color:#14213d;line-height:1.15}
+  .fp-bar-count b{color:#e07a2f}
+  .fp-bar-txt{font-size:12px;font-weight:700;color:#7a4a18;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .fp-bar-txt.lost{color:#c0392b}
+  .fp-bar-hint{font-size:10.5px;color:#9a8f7d;font-style:italic;line-height:1.35}
+  .cap-fpmsg{font-size:11.5px;line-height:1.45;padding:8px 10px;border-radius:8px;margin-bottom:4px;border:1px solid}
+  .cap-fpmsg.ok{background:#eef7f0;border-color:#bfe0c8;color:#20613a}
+  .cap-fpmsg.err{background:#fbefec;border-color:#e8c7be;color:#8c2e1f}
   .fp-rec-count b{color:#e07a2f}
   .fp-rec-hint{font-size:11.5px;color:#7a4a18;font-style:italic;line-height:1.5;margin-bottom:12px}
   .fp-rec-btns{display:flex;gap:8px}
@@ -1138,14 +1200,21 @@
       ${fpRecording ? `
         <div class="fp-rec-box">
           <div class="fp-rec-title"><span class="fp-rec-dot"></span> Recording full page</div>
-          <div class="fp-rec-count"><b id="fpFrameN">${fpFrames.length}</b> frame${fpFrames.length===1?"":"s"} captured</div>
-          <div class="fp-rec-hint">Scroll through your page from top to bottom.<br/>Frames are captured automatically as you scroll.</div>
+          <div class="fp-bar-wrap">
+            <div class="fp-bar-track" id="fpBarTrack"><div class="fp-bar-fill" id="fpBarFill"></div></div>
+            <div class="fp-bar-side">
+              <div class="fp-bar-count"><b id="fpFrameN">${fpFrames.length}</b> frame${fpFrames.length===1?"":"s"}</div>
+              <div class="fp-bar-txt" id="fpBarTxt">Calibrating\u2026</div>
+              <div class="fp-bar-hint">Scroll down steadily \u2014 a frame is taken each time the bar empties.</div>
+            </div>
+          </div>
           <div class="fp-rec-btns">
             <button class="stop" data-act="fullpage-stop">\u25A0 Stop &amp; save</button>
             <button class="cancel" data-act="fullpage-cancel" title="Discard the recording">Cancel</button>
           </div>
         </div>
       ` : `
+        ${fpMsg ? `<div class="cap-fpmsg ${fpMsg.kind}">${fpMsg.text}</div>` : ``}
         <button class="cap-shot" data-act="snap"><span class="cap-cam">\uD83D\uDCF8</span> Capture</button>
         <div class="cap-count"><b id="capN">${liveCount}</b> captured this session</div>
         ${sources.length>1?`<div class="cap-row"><span class="lbl">Target</span><select class="cap-sel" data-sel>${opts}${allOpt}</select></div>`:``}
@@ -1153,7 +1222,7 @@
           <button class="cap-mini" data-act="add">\uFF0B Add screen</button>
           <label class="cap-auto"><input type="checkbox" data-auto ${autoOn?"checked":""}/> Auto every <input type="number" class="cap-secs" data-secs min="1" max="120" value="${autoSecs}"/> s</label>
         </div>
-        <button class="cap-fpbtn" data-act="fullpage-start" ${(autoOn||!sources.length)?"disabled":""} title="${autoOn?"Turn off Auto capture to use Full page":(!sources.length?"Click + Add screen first":"Scroll through a page and the tool captures every stage automatically, then stitches into one tall screenshot")}">
+        <button class="cap-fpbtn" data-act="fullpage-start" ${(autoOn||!sources.length)?"disabled":""} title="${autoOn?"Turn off Auto capture to use Full page":(!sources.length?"Click + Add screen first":"Scroll down and the tool measures your scroll, taking a frame each time one screenful has passed, then stitches them into one tall screenshot")}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
           Full page ${autoOn?"(disabled while Auto is on)":(!sources.length?"(add a screen first)":"(scroll to capture)")}
         </button>
@@ -1168,6 +1237,7 @@
   function wirePanel(){
     panelEl.querySelectorAll("[data-act]").forEach(b=>b.addEventListener("click",()=>{
       const a=b.dataset.act;
+      if(fpMsg && a !== "fullpage-stop" && a !== "fullpage-cancel"){ setFpMsg(null); }
       if(a==="snap") doCapture();
       else if(a==="add") addSource();
       else if(a==="stop") stopLive();
@@ -1244,7 +1314,7 @@
   }
   function stopLive(){
     const wasActive=!!panelEl||sources.length>0;
-    if(fpRecording){ if(fpSampleTimer){ clearInterval(fpSampleTimer); fpSampleTimer=null; } fpRecording=false; fpFrames=[]; fpLastKept=null; fpCurSource=null; }
+    if(fpRecording){ if(fpSampleTimer){ clearInterval(fpSampleTimer); fpSampleTimer=null; } fpRecording=false; fpFrames=[]; fpPrevSample=null; fpCurSource=null; fpAccum=0; fpTotal=0; fpTarget=0; fpFixed=null; fpLost=false; fpLostSinceCapture=false; fpLostStreak=0; setFpMsg(null); }
     if(autoTimer){ clearInterval(autoTimer); autoTimer=null; } autoOn=false;
     sources.forEach(s=>{ try{ s.stream.getTracks().forEach(t=>t.stop()); }catch(_){} if(s.video){ s.video.srcObject=null; s.video.remove(); } });
     sources=[]; activeSrc="all"; liveCount=0;
@@ -1264,9 +1334,9 @@
     if(e.key==="c"||e.key==="C"){ e.preventDefault(); doCapture(); }
   });
 
-  /* ====== short clip recording (max 30s, saved to disk immediately) ====== */
+  /* ====== short clip recording (max 120s, saved to disk immediately) ====== */
   const clipBtn=$("#btnClip");
-  const CLIP_MAX_S=30;
+  const CLIP_MAX_S=120;
   const clipBtnIdle = clipBtn ? clipBtn.innerHTML : "";
   let mediaRec=null, clipChunks=[], clipStartedAt=0, clipTimerId=null, clipCountdownId=null, clipSource=null;
   function clipRecording(){ return !!mediaRec && mediaRec.state==="recording"; }
@@ -1294,14 +1364,15 @@
     catch(e){ toast("Couldn't start recorder: "+(e.message||e.name),"err"); mediaRec=null; return; }
     clipStartedAt=Date.now();
     // countdown UI
+    const fmtRemain=(sec)=> sec>=60 ? `${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}` : `${sec}s`;
     let remaining=CLIP_MAX_S;
-    setClipBtnLabel(`Stop (${remaining}s)`, true);
+    setClipBtnLabel(`Stop (${fmtRemain(remaining)})`, true);
     clipCountdownId=setInterval(()=>{
       remaining=Math.max(0, CLIP_MAX_S - Math.floor((Date.now()-clipStartedAt)/1000));
-      if(clipRecording()) setClipBtnLabel(`Stop (${remaining}s)`, true);
+      if(clipRecording()) setClipBtnLabel(`Stop (${fmtRemain(remaining)})`, true);
     }, 250);
     clipTimerId=setTimeout(()=>stopClip("auto"), CLIP_MAX_S*1000);
-    toast(`Recording clip\u2026 stops automatically at ${CLIP_MAX_S}s. Click again to stop early.`,"ok");
+    toast(`Recording clip\u2026 stops automatically at 2 minutes. Click again to stop early.`,"ok");
   }
   function stopClip(reason){
     if(clipTimerId){ clearTimeout(clipTimerId); clipTimerId=null; }
@@ -1346,71 +1417,214 @@
   // gets one clean frame per scroll position, no duplicates. On Stop, we stitch
   // all kept frames with overlap detection.
   let fpRecording = false;
-  let fpFrames = [];       // canvases kept during recording
-  let fpLastKept = null;   // most recent kept canvas (for change detection)
+  let fpFrames = [];        // [{canvas, offset, tracked}] — offset = px scrolled at capture time
+  let fpPrevSample = null;  // previous sampled canvas, for measuring the scroll delta
+  let fpAccum = 0;          // px scrolled since the last captured frame
+  let fpTotal = 0;          // px scrolled since recording started
+  let fpTarget = 0;         // px to scroll before the next capture (0 = not calibrated yet)
+  let fpFixed = null;       // {top,bottom} sticky extents, measured during calibration
+  let fpLost = false;       // true while the scroll delta can't be measured
+  let fpLostSinceCapture = false;  // tracking broke since the last capture → repair that seam
+  let fpLostStreak = 0;     // consecutive lost samples — triggers the fallback capture
+  let fpMsg = null;         // {text, kind} shown in the panel after recording ends
+  let fpMsgTimer = null;
+  // Show a result message in the panel, then let it fade on its own — it must
+  // never require a specific next action to go away.
+  function setFpMsg(msg){
+    fpMsg = msg;
+    if(fpMsgTimer){ clearTimeout(fpMsgTimer); fpMsgTimer = null; }
+    if(msg){
+      fpMsgTimer = setTimeout(()=>{
+        fpMsgTimer = null;
+        if(fpMsg === msg){ fpMsg = null; if(panelEl && !fpRecording) renderPanel(); }
+      }, 7000);
+    }
+  }
   let fpSampleTimer = null;
+  const FP_SAMPLE_MS = 100;
 
   // Cheap sameness check: sample a middle strip of both canvases, average
   // per-channel pixel difference. Returns true if they differ enough that
   // the user probably scrolled or the page changed.
-  function framesDifferEnough(prev, next){
-    if(!prev) return true;
-    if(prev.width !== next.width || prev.height !== next.height) return true;
-    const w = prev.width;
-    const stripY = Math.floor(prev.height * 0.30);
-    const stripH = Math.min(120, Math.floor(prev.height * 0.4));
-    const stepX = Math.max(4, Math.floor(w/240));
-    const pctx = prev.getContext("2d"), nctx = next.getContext("2d");
-    let prevData, nextData;
+  // Measure how far the page scrolled between two consecutive samples.
+  // Samples are ~100ms apart, so they overlap by ~95% and there is exactly one
+  // plausible alignment — which is why this is reliable where matching two
+  // frames a full viewport apart is not. Returns px scrolled (positive = down),
+  // or null if the match isn't trustworthy (scrolled too fast, page changed).
+  // Cheap dissimilarity check: has the view clearly moved on since this frame?
+  // Sparse grid, mean abs channel diff. Compression wobble stays well under the
+  // threshold; a genuinely scrolled view goes well over it.
+  function framesClearlyDiffer(a, b){
+    if(!a || !b || a.width !== b.width || a.height !== b.height) return true;
+    let ad, bd;
     try{
-      prevData = pctx.getImageData(0, stripY, w, stripH).data;
-      nextData = nctx.getImageData(0, stripY, w, stripH).data;
+      const y0 = Math.floor(a.height * 0.3), h = Math.max(40, Math.floor(a.height * 0.4));
+      ad = a.getContext("2d").getImageData(0, y0, a.width, h).data;
+      bd = b.getContext("2d").getImageData(0, y0, a.width, h).data;
     } catch(e){ return true; }
-    let sum=0, count=0;
-    for(let dy=0; dy<stripH; dy+=2){
-      for(let x=0; x<w; x+=stepX){
-        const idx = (dy*w + x)*4;
-        sum += Math.abs(prevData[idx]   - nextData[idx])
-             + Math.abs(prevData[idx+1] - nextData[idx+1])
-             + Math.abs(prevData[idx+2] - nextData[idx+2]);
-        count++;
+    const W = a.width, rows = Math.floor(ad.length / (W * 4));
+    let sum = 0, cnt = 0;
+    for(let dy = 0; dy < rows; dy += Math.max(4, Math.floor(rows / 40))){
+      for(let x = 0; x < W; x += Math.max(6, Math.floor(W / 100))){
+        const i = (dy * W + x) * 4;
+        sum += Math.abs(ad[i] - bd[i]) + Math.abs(ad[i+1] - bd[i+1]) + Math.abs(ad[i+2] - bd[i+2]);
+        cnt++;
       }
     }
-    return (sum/count) > 6;    // empirically ~1 for identical, ~10+ for scroll
+    return cnt > 0 && (sum / cnt) > 10;
   }
 
-  function updateFpFrameCount(){
+  function measureScrollDelta(prev, next, stickyTop, stickyBottom){
+    if(!prev || !next) return null;
+    if(prev.width !== next.width || prev.height !== next.height) return null;
+    const W = prev.width, H = prev.height;
+    const T = stickyTop|0, B = stickyBottom|0;
+    const usable = H - T - B;
+    if(usable < 220) return null;   // frame too short to track in
+
+    const dMax  = Math.max(60, Math.min(400, Math.floor(usable * 0.45)));
+    const dMin  = -Math.max(20, Math.min(120, Math.floor(usable * 0.15)));
+    const bandH = Math.max(24, Math.min(64,  Math.floor(usable * 0.12)));
+    // The band sits in prev at bandY and appears in next at bandY - d, so next
+    // must be readable from bandY-dMax through bandY-dMin+bandH.
+    const loY = T + dMax;
+    const hiY = H - B - bandH + dMin;
+    if(hiY <= loY) return null;
+    const stepX = Math.max(3, Math.floor(W / 280));
+    const pctx = prev.getContext("2d");
+
+    // Only pixels with local contrast carry position information. Flat background
+    // matches at ANY stripe-aligned offset, so including it lets a wrong offset
+    // look almost as good as the right one. Find the band with the most detail.
+    let bandY = -1, pd = null, sDy = null, sX = null, sPi = null;
+    for(const frac of [0.5, 0.3, 0.7]){
+      const cand = Math.floor(loY + (hiY - loY) * frac);
+      let data;
+      try{ data = pctx.getImageData(0, cand, W, bandH).data; }
+      catch(e){ return null; }
+      const dys = [], xs = [], pis = [];
+      for(let dy = 0; dy < bandH; dy += 2){
+        for(let x = 2; x < W - 4; x += stepX){
+          const a = (dy*W + x)*4, b = (dy*W + x + 2)*4;
+          const g = Math.abs(data[a]   - data[b])
+                  + Math.abs(data[a+1] - data[b+1])
+                  + Math.abs(data[a+2] - data[b+2]);
+          if(g > 40){ dys.push(dy); xs.push(x); pis.push(a); }
+        }
+      }
+      if(pis.length > (sPi ? sPi.length : 0)){ bandY = cand; pd = data; sDy = dys; sX = xs; sPi = pis; }
+      if(sPi && sPi.length > 800) break;   // plenty of detail, stop looking
+    }
+    if(!sPi || sPi.length < 150) return null;   // nothing distinctive to track here
+    // Cap the work so a dense band can't blow the 100ms sampling budget
+    if(sPi.length > 1600){
+      const stride = Math.ceil(sPi.length / 1600);
+      const dys = [], xs = [], pis = [];
+      for(let k = 0; k < sPi.length; k += stride){ dys.push(sDy[k]); xs.push(sX[k]); pis.push(sPi[k]); }
+      sDy = dys; sX = xs; sPi = pis;
+    }
+
+    const nOriginY = bandY - dMax;
+    const nH = (dMax - dMin) + bandH;
+    let nd;
+    try{ nd = next.getContext("2d").getImageData(0, nOriginY, W, nH).data; }
+    catch(e){ return null; }
+
+    const N = sPi.length;
+    function scoreAt(d){
+      const nTop = dMax - d;                     // row index into nd
+      if(nTop < 0 || nTop + bandH > nH) return Infinity;
+      let sum = 0;
+      for(let k = 0; k < N; k++){
+        const pi = sPi[k];
+        const ni = ((nTop + sDy[k]) * W + sX[k]) * 4;
+        sum += Math.abs(pd[pi]   - nd[ni])
+             + Math.abs(pd[pi+1] - nd[ni+1])
+             + Math.abs(pd[pi+2] - nd[ni+2]);
+      }
+      return sum / N;
+    }
+
+    // Coarse sweep at 2px. A sharp true peak scores badly even 2px off, so we
+    // refine around the best FEW candidates rather than only the top one — the
+    // latter is how the search used to lock onto a false peak rows away.
+    const coarse = [];
+    for(let d = dMin; d <= dMax; d += 2) coarse.push([d, scoreAt(d)]);
+    if(!coarse.length) return null;
+    const cands = coarse.slice().sort((a,b)=>a[1]-b[1]).slice(0, 6);
+    let bestD = cands[0][0], bestScore = Infinity;
+    for(const [cd] of cands){
+      for(let d = Math.max(dMin, cd-2); d <= Math.min(dMax, cd+2); d++){
+        const s = scoreAt(d);
+        if(s < bestScore){ bestScore = s; bestD = d; }
+      }
+    }
+    // Best score at a well-separated offset — the ambiguity signal
+    let secondScore = Infinity;
+    for(const [d, s] of coarse){
+      if(Math.abs(d - bestD) >= 16 && s < secondScore) secondScore = s;
+    }
+
+    // On edge pixels a true match scores near zero while any wrong offset scores
+    // heavily, so an absolute gate is meaningful here in a way it wasn't before.
+    if(bestScore > 45) return null;
+    if(secondScore < 90 && bestScore > secondScore * 0.55) return null;  // no clear winner
+    return bestD;
+  }
+
+  function updateFpBar(){
     if(!panelEl) return;
-    const el = panelEl.querySelector("#fpFrameN");
-    if(el) el.textContent = fpFrames.length;
+    const cnt   = panelEl.querySelector("#fpFrameN");
+    const fill  = panelEl.querySelector("#fpBarFill");
+    const track = panelEl.querySelector("#fpBarTrack");
+    const txt   = panelEl.querySelector("#fpBarTxt");
+    if(cnt) cnt.textContent = fpFrames.length;
+    if(track) track.classList.toggle("lost", fpLost);
+    if(txt)   txt.classList.toggle("lost", fpLost);
+    if(!fpTarget){
+      if(fill) fill.style.height = "100%";
+      if(txt)  txt.textContent = "Calibrating\u2026";
+      return;
+    }
+    const remain = Math.max(0, fpTarget - fpAccum);
+    if(fill) fill.style.height = Math.max(0, Math.min(100, (remain / fpTarget) * 100)) + "%";
+    if(txt)  txt.textContent = fpLost ? "Too fast \u2014 slow down" : Math.round(remain) + " px to go";
+  }
+  function flashFpBar(){
+    if(!panelEl) return;
+    const track = panelEl.querySelector("#fpBarTrack");
+    if(!track) return;
+    track.classList.add("flash");
+    setTimeout(()=>{ if(track) track.classList.remove("flash"); }, 180);
   }
 
   // Which Live Capture source we're currently sampling from (a specific screen the user added)
   let fpCurSource = null;
 
   function startFpRecording(){
-    // Use the same source the big Capture button uses
     const targets = targetsForCapture();
     if(!targets.length){
       toast("Add a screen first \u2014 click \u201C\uFF0B Add screen\u201D.","err");
       return;
     }
-    // Full-page only makes sense with a single source (one page, one scroll)
-    // If the user has "All sources" selected with multiple screens, use the first one.
     const src = targets[0];
     if(!src || !src.video || !src.video.videoWidth){
       toast("Capture source not ready yet \u2014 wait a moment and try again.","err");
       return;
     }
-    if(autoOn) setAuto(false);   // guard: Auto conflicts with full-page recording
+    if(autoOn) setAuto(false);
+    setFpMsg(null);
     fpCurSource = src;
     fpRecording = true;
-    fpFrames = [];
-    fpLastKept = null;
-    // Capture the first frame immediately
+    fpFrames = []; fpPrevSample = null;
+    fpAccum = 0; fpTotal = 0; fpTarget = 0; fpFixed = null;
+    fpLost = false; fpLostSinceCapture = false; fpLostStreak = 0;
+
     const first = snapVideo(src.video);
-    if(first){ fpFrames.push(first); fpLastKept = first; }
-    // Poll every 400ms
+    if(!first){ fpRecording = false; toast("Couldn't grab a frame \u2014 try again.","err"); return; }
+    fpFrames.push({ canvas: first, offset: 0, tracked: true });
+    fpPrevSample = first;
+
     fpSampleTimer = setInterval(()=>{
       if(!fpCurSource || !fpCurSource.stream || !fpCurSource.stream.active
          || !fpCurSource.track || fpCurSource.track.readyState!=="live"){
@@ -1418,19 +1632,67 @@
         toast("The screen sharing ended \u2014 full-page recording stopped.","err");
         return;
       }
-      const c = snapVideo(fpCurSource.video);
-      if(!c) return;
-      if(framesDifferEnough(fpLastKept, c)){
-        fpFrames.push(c);
-        fpLastKept = c;
-        updateFpFrameCount();
+      const cur = snapVideo(fpCurSource.video);
+      if(!cur) return;
+
+      const T = fpFixed ? fpFixed.top : 0;
+      const B = fpFixed ? fpFixed.bottom : 0;
+      const d = measureScrollDelta(fpPrevSample, cur, T, B);
+
+      if(d === null){
+        // Couldn't measure this step. Warn, mark the seam for repair — and if it
+        // keeps happening while the view is clearly moving on, capture anyway
+        // (tracked:false) so stitch-time matching can recover the offset. The
+        // feature degrades to match-based stitching instead of producing nothing.
+        fpLost = true; fpLostSinceCapture = true; fpLostStreak++;
+        const lastCap = fpFrames[fpFrames.length - 1];
+        if(fpLostStreak >= 6 && framesClearlyDiffer(lastCap.canvas, cur)){
+          const T2 = fpFixed ? fpFixed.top : 0, B2 = fpFixed ? fpFixed.bottom : 0;
+          const guess = Math.max(80, Math.floor((cur.height - T2 - B2) * 0.9));
+          const offset = lastCap.offset + guess;   // provisional — repaired at stitch
+          fpFrames.push({ canvas: cur, offset, tracked: false });
+          fpTotal = offset; fpAccum = 0;
+          fpLostSinceCapture = false; fpLostStreak = 0;
+          flashFpBar();
+        }
+        fpPrevSample = cur;
+        updateFpBar();
+        return;
       }
-    }, 400);
+      fpLost = false; fpLostStreak = 0;
+      fpAccum += d; fpTotal += d;
+      if(fpAccum < 0) fpAccum = 0;          // scrolled back up past the last capture
+      fpPrevSample = cur;
+
+      // Calibrate once enough real movement has happened to tell sticky from content:
+      // a sticky row still matches at the same y, a content row no longer does.
+      if(!fpFixed && fpTotal >= 250){
+        const H = cur.height;
+        const maxCheck = Math.min(600, Math.floor(H * 0.5));
+        let t = fixedTopExtent(fpFrames[0].canvas, cur, maxCheck);
+        let b = fixedBottomExtent(fpFrames[0].canvas, cur, maxCheck);
+        if(t < 20) t = 0;
+        if(b < 20) b = 0;
+        fpFixed = { top: t, bottom: b };
+        const contentH = H - t - b;
+        // 90% of the content height: always leaves a safety overlap, never a gap.
+        fpTarget = Math.max(80, Math.floor(contentH * 0.9));
+      }
+
+      if(fpTarget && fpAccum >= fpTarget){
+        fpFrames.push({ canvas: cur, offset: fpTotal, tracked: !fpLostSinceCapture });
+        fpAccum = 0;
+        fpLostSinceCapture = false;
+        flashFpBar();
+      }
+      updateFpBar();
+    }, FP_SAMPLE_MS);
+
     renderPanel();
-    const label = targets.length>1
-      ? `Recording "${src.label}" \u2014 scroll through the page from top to bottom.`
-      : `Recording \u2014 scroll through your page from top to bottom.`;
-    toast(label,"ok");
+    const label = targets.length > 1
+      ? `Recording "${src.label}" \u2014 scroll down steadily.`
+      : `Recording \u2014 scroll down steadily from the top of the page.`;
+    toast(label, "ok");
   }
 
   async function stopFpRecording(cancelled){
@@ -1438,26 +1700,51 @@
     fpCurSource = null;
     if(fpSampleTimer){ clearInterval(fpSampleTimer); fpSampleTimer = null; }
     const frames = fpFrames.slice();
-    fpFrames = [];
-    fpLastKept = null;
-    if(cancelled){
-      renderPanel();
-      toast("Full-page capture cancelled","");
-      return;
+    const fixedAtRecord = fpFixed;
+    const lastSample = fpPrevSample, lastTotal = fpTotal, lastDirty = fpLostSinceCapture;
+    fpFrames = []; fpPrevSample = null; fpFixed = null;
+    fpAccum = 0; fpTotal = 0; fpTarget = 0; fpLost = false; fpLostSinceCapture = false; fpLostStreak = 0;
+
+    if(cancelled){ renderPanel(); toast("Full-page capture cancelled",""); return; }
+
+    // Close the tail: the scroll since the last auto-capture would otherwise be
+    // thrown away, cutting off the bottom of every page — and on a short page
+    // (bar never emptied) it left nothing to stitch at all.
+    if(frames.length && lastSample && lastTotal > frames[frames.length-1].offset + 4){
+      frames.push({ canvas: lastSample, offset: lastTotal, tracked: !lastDirty });
     }
+
     if(frames.length < 2){
+      setFpMsg({ kind:"err", text:"Nothing was captured \u2014 the tool couldn't measure your scrolling. Try scrolling more slowly, and make sure the page itself scrolls (not a panel inside it)." });
       renderPanel();
-      toast("Not enough frames captured. Scroll more between clicks and try again.","err");
+      toast("No scrolling detected \u2014 scroll down through the page while recording.","err");
       return;
     }
-    // Give the UI a beat to switch back to the normal panel state before stitching
     renderPanel();
     await new Promise(r=>setTimeout(r,20));
-    const stitched = stitchFrames(frames);
-    if(!stitched){ return; }
-    const dataUrl = stitched.toDataURL("image/png");
+
+    // Crop with the SAME sticky measurement the target was derived from. If the
+    // two ever disagree, the 10% safety overlap can vanish and content is lost at
+    // every seam — which is exactly what a second, independent measurement caused.
+    // Over-detecting sticky now merely costs extra frames; it can't drop content.
+    let fixed = fixedAtRecord;
+    if(!fixed) fixed = detectFixedRegions(frames.map(f=>f.canvas)) || { top:0, bottom:0 };
+
+    let stitched = null, dataUrl = null;
+    try{
+      stitched = stitchByOffsets(frames, fixed);
+      if(stitched) dataUrl = stitched.toDataURL("image/png");
+    } catch(e){ console.error("stitch failed:", e); }
+    if(!stitched || !dataUrl){
+      setFpMsg({ kind:"err", text:"Stitching failed \u2014 the frames couldn't be combined. Try again, scrolling steadily." });
+      renderPanel();
+      toast("Stitching failed \u2014 try recording again.","err");
+      return;
+    }
     const s = addShot(dataUrl);
     if(s){ s.step = `Full-page capture (${frames.length} frames stitched)`; }
+    setFpMsg({ kind:"ok", text:`Full-page shot saved (${stitched.width}\u00D7${stitched.height}) \u2014 it's in the gallery.` });
+    renderPanel();
     toast(`Full-page shot saved \u2014 ${stitched.width}\u00D7${stitched.height}`,"ok");
     scheduleSave(); render();
   }
@@ -1679,107 +1966,144 @@
     return out;
   }
 
-  function stitchFrames(frames){
-    if(frames.length < 2) return null;
-    const w = frames[0].width;
-    for(const c of frames){
-      if(c.width !== w){
-        toast("Frames have different widths \u2014 don't resize the window while recording.","err");
+  // Recover the scroll between two consecutive CAPTURED frames (used only for
+  // tracked:false seams). Unlike the 100ms sampling case, these frames are almost
+  // a whole viewport apart: the true overlap is small and its size is exactly what
+  // we're solving for. So: try each candidate scroll s, compare prev's rows below
+  // s against next's top rows (the overlap window that s implies), and score only
+  // edge pixels — flat/striped background matches at any aligned offset and would
+  // drown out the signal.
+  function repairScroll(prevC, nextC, T, B){
+    if(prevC.width !== nextC.width || prevC.height !== nextC.height) return null;
+    const W = prevC.width, H = prevC.height;
+    const bandH = H - (T|0) - (B|0);
+    if(bandH < 80) return null;
+    const sMin = Math.max(20, Math.floor(bandH * 0.35));
+    const sMax = bandH - 30;                       // need ≥30px of overlap to judge
+    if(sMax <= sMin) return null;
+    let pd, nd;
+    try{
+      pd = prevC.getContext("2d").getImageData(0, T|0, W, bandH).data;
+      nd = nextC.getContext("2d").getImageData(0, T|0, W, bandH).data;
+    } catch(e){ return null; }
+
+    // Edge pixels from the next band's top region (the largest possible window).
+    const winMax = bandH - sMin;
+    const stepX = Math.max(3, Math.floor(W / 280));
+    const eDy = [], eX = [], eNi = [];
+    for(let dy = 0; dy < winMax; dy += 2){
+      for(let x = 2; x < W - 4; x += stepX){
+        const a = (dy*W + x)*4, b = (dy*W + x + 2)*4;
+        const g = Math.abs(nd[a]   - nd[b])
+                + Math.abs(nd[a+1] - nd[b+1])
+                + Math.abs(nd[a+2] - nd[b+2]);
+        if(g > 40){ eDy.push(dy); eX.push(x); eNi.push(a); }
+      }
+    }
+    if(eDy.length < 80) return null;
+
+    function scoreAt(s){
+      const win = bandH - s;                       // rows of genuine overlap
+      let sum = 0, cnt = 0;
+      for(let k = 0; k < eDy.length; k++){
+        const dy = eDy[k];
+        if(dy >= win) break;                       // eDy is ascending
+        const pi = ((s + dy) * W + eX[k]) * 4;
+        const ni = eNi[k];
+        sum += Math.abs(pd[pi]   - nd[ni])
+             + Math.abs(pd[pi+1] - nd[ni+1])
+             + Math.abs(pd[pi+2] - nd[ni+2]);
+        cnt++;
+      }
+      return cnt >= 60 ? sum/cnt : Infinity;       // too little overlap to judge
+    }
+
+    const coarse = [];
+    for(let s = sMin; s <= sMax; s += 3) coarse.push([s, scoreAt(s)]);
+    const cands = coarse.slice().sort((a,b)=>a[1]-b[1]).slice(0, 6);
+    let bestS = cands[0][0], bestScore = Infinity;
+    for(const [cs] of cands){
+      for(let s = Math.max(sMin, cs-3); s <= Math.min(sMax, cs+3); s++){
+        const v = scoreAt(s);
+        if(v < bestScore){ bestScore = v; bestS = s; }
+      }
+    }
+    let secondScore = Infinity;
+    for(const [s, v] of coarse){
+      if(Math.abs(s - bestS) >= 16 && v < secondScore) secondScore = v;
+    }
+    if(bestScore > 45) return null;
+    if(secondScore < 90 && bestScore > secondScore * 0.55) return null;
+    return bestS;
+  }
+
+  // Place each frame at its KNOWN scroll offset. No matching, no confidence
+  // heuristics — the offsets were measured while the user scrolled.
+  //
+  // Geometry: stitched row 0..T is the sticky header (from frame 0). Below that,
+  // stitched row T+k is content pixel k. Frame i shows content starting at its
+  // offset, so its content band (rows T..H-B) belongs at stitched row T+offset.
+  function stitchByOffsets(frames, fixed){
+    if(!frames.length) return null;
+    const W = frames[0].canvas.width, H = frames[0].canvas.height;
+    for(const f of frames){
+      if(f.canvas.width !== W || f.canvas.height !== H){
+        toast("Frame size changed mid-recording \u2014 don't resize or zoom while capturing.","err");
         return null;
       }
     }
+    const T = fixed.top|0, B = fixed.bottom|0;
+    const bandH = H - T - B;
+    if(bandH < 40){ toast("Sticky regions leave too little content to stitch.","err"); return null; }
 
-    // ---------- STEP 1: detect fixed (sticky) top and bottom regions ----------
-    // These are portions of the frame that don't change as the user scrolls, like
-    // ServiceNow's toolbar or a fixed footer. If we don't crop them, they get
-    // duplicated in every join of the stitched image.
-    const fixed = detectFixedRegions(frames);
-
-    // ---------- STEP 2: build cropped frames for stitching ----------
-    // The first frame keeps its fixed top (it's the first appearance of that
-    // header); the last frame keeps its fixed bottom. All other frames get both
-    // cropped away, since their fixed regions are already represented elsewhere.
-    const N = frames.length;
-    const cropped = frames.map((f, i) => {
-      const cropTop = (i === 0) ? 0 : fixed.top;
-      const cropBot = (i === N-1) ? 0 : fixed.bottom;
-      const contentH = f.height - cropTop - cropBot;
-      if(contentH < 20) return f;   // safety
-      return sliceCanvas(f, cropTop, contentH);
-    });
-
-    // ---------- STEP 3: overlap detection between consecutive cropped frames ----------
-    const results = [{overlap:0, confident:true, score:0}];   // first frame is anchor
-    for(let i=1;i<cropped.length;i++){
-      results.push(findOverlap(cropped[i-1], cropped[i]));
-    }
-    // Learn typical scroll amount from confident pairs
-    const confidentScrolls = [];
-    for(let i=1;i<results.length;i++){
-      if(results[i].confident && results[i].overlap > 0){
-        confidentScrolls.push(cropped[i].height - results[i].overlap);
-      }
-    }
-    let medianScroll = null;
-    let usedFallbackMedian = false;
-    if(confidentScrolls.length){
-      const sorted = confidentScrolls.slice().sort((a,b)=>a-b);
-      medianScroll = sorted[Math.floor(sorted.length/2)];
-    } else if(cropped.length > 1) {
-      // No confident matches at all — content is too visually repetitive to lock
-      // onto a clean overlap. Assume the user scrolled by ~half the cropped
-      // viewport per capture, which is a safer default than zero overlap
-      // (which would leave large duplicated regions).
-      medianScroll = Math.floor(cropped[1].height * 0.5);
-      usedFallbackMedian = true;
-    }
-    // Fill in uncertain pairs from the median scroll — INCLUDING confident-but-
-    // suspiciously-small ones. The check below overrides any overlap that's
-    // implausibly smaller than the typical scroll amount, which is where
-    // "whole sections repeat" comes from.
-    let uncertainCount = 0;
-    for(let i=1;i<results.length;i++){
-      const isUncertain = !results[i].confident;
-      if(isUncertain) uncertainCount++;
-      if(medianScroll !== null){
-        const est = Math.max(0, cropped[i].height - medianScroll);
-        // Override cases:
-        //   - overlap is 0 (no match found)
-        //   - overlap is dramatically smaller than the median-based estimate
-        //     (algorithm probably locked onto a false match on repetitive content)
-        if(results[i].overlap === 0 || (isUncertain && results[i].overlap < est * 0.6)){
-          results[i].overlap = est;
-        }
-      }
+    // Invariant: consecutive frames must not be further apart than the content
+    // band they each carry, or the page between them was never captured.
+    let gapPx = 0;
+    for(let i = 1; i < frames.length; i++){
+      const step = frames[i].offset - frames[i-1].offset;
+      if(step > bandH) gapPx = Math.max(gapPx, step - bandH);
     }
 
-    // ---------- STEP 4: stitch the cropped frames ----------
-    let totalH = 0;
-    for(let i=0;i<cropped.length;i++) totalH += cropped[i].height - results[i].overlap;
+    // Repair seams where tracking was lost: fall back to matching for that one
+    // join, then shift every later frame by the correction.
+    let repaired = 0, unrepaired = 0;
+    for(let i = 1; i < frames.length; i++){
+      if(frames[i].tracked) continue;
+      const s = repairScroll(frames[i-1].canvas, frames[i].canvas, T, B);
+      const scrolled = (s !== null) ? s : Math.floor(bandH * 0.9);
+      if(s === null) unrepaired++;
+      const shift = (frames[i-1].offset + scrolled) - frames[i].offset;
+      for(let j = i; j < frames.length; j++) frames[j].offset += shift;
+      repaired++;
+    }
+
+    const lastOffset = frames[frames.length-1].offset;
+    const totalH = lastOffset + H;
     if(totalH > 32000){
       toast(`Stitched image is very tall (${totalH}px) \u2014 some browsers may struggle.`,"err");
     }
     const out = document.createElement("canvas");
-    out.width = w; out.height = totalH;
+    out.width = W; out.height = totalH;
     const ctx = out.getContext("2d");
-    let y = 0;
-    for(let i=0;i<cropped.length;i++){
-      const c = cropped[i];
-      const skip = results[i].overlap;
-      const drawH = c.height - skip;
-      ctx.drawImage(c, 0, skip, w, drawH, 0, y, w, drawH);
-      y += drawH;
+    // Frame 0 whole: gives the sticky header once, plus the first screenful.
+    ctx.drawImage(frames[0].canvas, 0, 0);
+    // Every later frame contributes only its content band, at its known offset.
+    for(let i = 1; i < frames.length; i++){
+      ctx.drawImage(frames[i].canvas, 0, T, W, bandH, 0, T + frames[i].offset, W, bandH);
     }
-    // Friendly summary toast covering all the smart bits we applied
+    // Sticky footer once, from the last frame, at the very bottom.
+    if(B > 0){
+      const last = frames[frames.length-1].canvas;
+      ctx.drawImage(last, 0, H - B, W, B, 0, totalH - B, W, B);
+    }
+
     const notes = [];
-    if(fixed.top > 0)    notes.push(`removed a ${fixed.top}px sticky header`);
-    if(fixed.bottom > 0) notes.push(`removed a ${fixed.bottom}px sticky footer`);
-    if(usedFallbackMedian) notes.push(`estimated all scroll amounts (content too uniform to match)`);
-    else if(uncertainCount > 0) notes.push(`${uncertainCount} uncertain join${uncertainCount===1?"":"s"}`);
-    if(notes.length){
-      const kind = (uncertainCount > 0 || usedFallbackMedian) ? "" : "ok";
-      toast(`Stitched (${notes.join(", ")}).`, kind);
-    }
+    if(T) notes.push(`${T}px sticky header kept once`);
+    if(B) notes.push(`${B}px sticky footer kept once`);
+    if(repaired) notes.push(`${repaired} seam${repaired===1?"":"s"} recovered by matching`);
+    if(unrepaired) notes.push(`${unrepaired} seam${unrepaired===1?"":"s"} could not be verified \u2014 check the result`);
+    if(gapPx) notes.push(`up to ${gapPx}px may be missing at some seams \u2014 check the result`);
+    if(notes.length) toast(`Stitched (${notes.join(", ")}).`, (repaired||gapPx) ? "" : "ok");
     return out;
   }
 
@@ -1908,6 +2232,11 @@
   const COLORS=["#e02f2f","#e07a2f","#f1c40f","#2f7d4f","#2f6fe0","#9b2fe0","#11161f","#ffffff"];
   let annotEditId=null, baseImg=null, aScale=1, shapes=[], curTool="arrow", curColor=COLORS[0];
   let curWidth=1;   // stroke-width multiplier: 0.5 (S), 1 (M, default), 2 (L)
+  let cropRect=null;      // pending crop selection, in canvas/display coords
+  let preCropState=null;  // {img, shapes, scale} captured before the FIRST crop, for Revert
+  // baseImg is an Image before any crop and a Canvas after one — read size from either.
+  function baseW(){ return baseImg ? (baseImg.naturalWidth  || baseImg.width)  : 0; }
+  function baseH(){ return baseImg ? (baseImg.naturalHeight || baseImg.height) : 0; }
   let aDrawing=false, aStart=null, penPts=[];
   let selectedIdx=-1;         // index into shapes[] of the currently selected shape (-1 = none)
   let dragMode=null;          // "move" while dragging a selected shape
@@ -1944,11 +2273,15 @@
     if(curTool!=="select"){ setSelected(-1); }
     aCanvas.classList.toggle("tool-select", curTool==="select");
     aCanvas.classList.toggle("tool-text",   curTool==="text");
+    aCanvas.classList.toggle("tool-crop",   curTool==="crop");
+    // Leaving the crop tool abandons any pending selection
+    if(curTool!=="crop" && cropRect){ cropRect=null; redrawAnnot(); }
+    updateCropBtns();
   });
 
   function openAnnot(id){
     const s=shots.find(x=>x.id===id); if(!s) return;
-    annotEditId=id; shapes=[]; selectedIdx=-1;
+    annotEditId=id; shapes=[]; selectedIdx=-1; cropRect=null; preCropState=null;
     const img=new Image();
     img.onload=()=>{
       baseImg=img;
@@ -1956,11 +2289,11 @@
       aScale=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight,1);
       aCanvas.width=Math.round(img.naturalWidth*aScale); aCanvas.height=Math.round(img.naturalHeight*aScale);
       redrawAnnot(); annot.classList.add("open");
-      updateDeleteBtn();
+      updateDeleteBtn(); updateCropBtns();
     };
     img.src=s.dataUrl;
   }
-  function closeAnnot(){ cleanupTextEditor(); annot.classList.remove("open"); baseImg=null; annotEditId=null; shapes=[]; selectedIdx=-1; updateDeleteBtn(); }
+  function closeAnnot(){ cleanupTextEditor(); annot.classList.remove("open"); baseImg=null; annotEditId=null; shapes=[]; selectedIdx=-1; cropRect=null; preCropState=null; updateDeleteBtn(); updateCropBtns(); }
 
   function setSelected(idx){
     selectedIdx=idx;
@@ -1992,6 +2325,7 @@
     if(selectedIdx>=0 && shapes[selectedIdx]){
       drawSelectionOutline(aCtx, shapes[selectedIdx]);
     }
+    drawCropOverlay(aCtx);
   }
 
   function drawShape(ctx,sh,canvasW){
@@ -2157,6 +2491,105 @@
   }
   function cloneShape(sh){ return JSON.parse(JSON.stringify(sh)); }
 
+  /* ---- crop helpers ---- */
+  // Normalise a drag rect (handles dragging up/left) and clamp it to the canvas.
+  function normRect(r){
+    let x = Math.min(r.x, r.x + r.w), y = Math.min(r.y, r.y + r.h);
+    let w = Math.abs(r.w), h = Math.abs(r.h);
+    if(x < 0){ w += x; x = 0; }
+    if(y < 0){ h += y; y = 0; }
+    if(x + w > aCanvas.width)  w = aCanvas.width  - x;
+    if(y + h > aCanvas.height) h = aCanvas.height - y;
+    return { x, y, w: Math.max(0, w), h: Math.max(0, h) };
+  }
+  function scaleShapeBy(sh, k){
+    if(sh.type==="rect"||sh.type==="highlight"){ sh.x*=k; sh.y*=k; sh.w*=k; sh.h*=k; }
+    else if(sh.type==="arrow"||sh.type==="line"){ sh.x1*=k; sh.y1*=k; sh.x2*=k; sh.y2*=k; }
+    else if(sh.type==="pen"){ sh.pts=sh.pts.map(p=>({x:p.x*k, y:p.y*k})); }
+    else if(sh.type==="text"){ sh.x*=k; sh.y*=k; if(sh.size) sh.size*=k; }
+  }
+  function updateCropBtns(){
+    const ap=$("#annotCropApply"), rv=$("#annotCropRevert");
+    if(ap) ap.style.display = cropRect ? "inline-flex" : "none";
+    if(rv) rv.style.display = preCropState ? "inline-flex" : "none";
+  }
+  // Dim everything outside the pending crop and label it with the real output size.
+  function drawCropOverlay(ctx){
+    if(!cropRect) return;
+    const r = normRect(cropRect);
+    if(r.w < 1 || r.h < 1) return;
+    const W = aCanvas.width, H = aCanvas.height;
+    ctx.save();
+    ctx.fillStyle = "rgba(17,22,31,0.55)";
+    ctx.fillRect(0, 0, W, r.y);
+    ctx.fillRect(0, r.y + r.h, W, H - (r.y + r.h));
+    ctx.fillRect(0, r.y, r.x, r.h);
+    ctx.fillRect(r.x + r.w, r.y, W - (r.x + r.w), r.h);
+    ctx.strokeStyle = "#e07a2f"; ctx.lineWidth = 1.5; ctx.setLineDash([6,4]);
+    ctx.strokeRect(r.x, r.y, r.w, r.h);
+    ctx.setLineDash([]);
+    const inv = 1/aScale;
+    const label = `${Math.round(r.w*inv)} \u00D7 ${Math.round(r.h*inv)}`;
+    ctx.font = "600 12px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+    const tw = ctx.measureText(label).width;
+    const ly = r.y >= 22 ? r.y - 20 : r.y + 4;
+    ctx.fillStyle = "#e07a2f"; ctx.fillRect(r.x, ly, tw + 12, 18);
+    ctx.fillStyle = "#fff"; ctx.fillText(label, r.x + 6, ly + 13);
+    ctx.restore();
+  }
+  function applyCrop(){
+    if(!cropRect || !baseImg) return;
+    const r = normRect(cropRect);
+    const inv = 1/aScale;
+    // Map the display-space selection back onto the full-resolution source.
+    const sx = Math.max(0, Math.round(r.x * inv));
+    const sy = Math.max(0, Math.round(r.y * inv));
+    const sw = Math.min(baseW() - sx, Math.round(r.w * inv));
+    const sh = Math.min(baseH() - sy, Math.round(r.h * inv));
+    if(sw < 10 || sh < 10){ toast("Crop region is too small.","err"); return; }
+    // Remember the original once, so Revert always goes all the way back.
+    if(!preCropState){
+      preCropState = { img: baseImg, shapes: JSON.parse(JSON.stringify(shapes)), scale: aScale };
+    }
+    const c = document.createElement("canvas");
+    c.width = sw; c.height = sh;
+    c.getContext("2d").drawImage(baseImg, sx, sy, sw, sh, 0, 0, sw, sh);
+    baseImg = c;
+    // Shift annotations into the cropped frame (still in the old display scale).
+    shapes.forEach(s => moveShapeBy(s, -r.x, -r.y));
+    // Drop anything now entirely outside the kept region.
+    shapes = shapes.filter(s => {
+      const b = shapeBounds(s);
+      return (b.x + b.w) > 0 && (b.y + b.h) > 0 && b.x < r.w && b.y < r.h;
+    });
+    // Refit the smaller image to the viewport, then rescale annotations to match.
+    const maxW = window.innerWidth - 28, maxH = window.innerHeight - 110;
+    const newScale = Math.min(maxW/sw, maxH/sh, 1);
+    const k = newScale / aScale;
+    shapes.forEach(s => scaleShapeBy(s, k));
+    aScale = newScale;
+    aCanvas.width  = Math.round(sw * newScale);
+    aCanvas.height = Math.round(sh * newScale);
+    cropRect = null;
+    setSelected(-1);
+    updateCropBtns();
+    redrawAnnot();
+    toast(`Cropped to ${sw} \u00D7 ${sh}`, "ok");
+  }
+  function revertCrop(){
+    if(!preCropState) return;
+    baseImg = preCropState.img;
+    shapes  = preCropState.shapes;
+    aScale  = preCropState.scale;
+    aCanvas.width  = Math.round(baseW() * aScale);
+    aCanvas.height = Math.round(baseH() * aScale);
+    preCropState = null; cropRect = null;
+    setSelected(-1);
+    updateCropBtns();
+    redrawAnnot();
+    toast("Full image restored", "");
+  }
+
   /* ---- inline text editor for the Text tool ---- */
   let textEditor = null;         // the <input> element
   let textEditorTarget = null;   // {kind:"new"|"edit", x, y, idx?}
@@ -2262,6 +2695,10 @@
       return;
     }
     if(!aDrawing) return; e.preventDefault();
+    if(curTool==="crop"){
+      cropRect = { x:aStart.x, y:aStart.y, w:p.x-aStart.x, h:p.y-aStart.y };
+      redrawAnnot(); return;
+    }
     let shape;
     if(curTool==="arrow") shape={type:"arrow",color:curColor,widthMult:curWidth,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y};
     else if(curTool==="line") shape={type:"line",color:curColor,widthMult:curWidth,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y};
@@ -2277,6 +2714,11 @@
     }
     if(!aDrawing) return; aDrawing=false; e.preventDefault();
     const p=aPos(e);
+    if(curTool==="crop"){
+      const r = normRect({ x:aStart.x, y:aStart.y, w:p.x-aStart.x, h:p.y-aStart.y });
+      cropRect = (r.w > 8 && r.h > 8) ? r : null;   // a bare click clears the selection
+      updateCropBtns(); redrawAnnot(); return;
+    }
     if(curTool==="arrow"){ if(Math.hypot(p.x-aStart.x,p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"arrow",color:curColor,widthMult:curWidth,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y}); }
     else if(curTool==="line"){ if(Math.hypot(p.x-aStart.x,p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"line",color:curColor,widthMult:curWidth,x1:aStart.x,y1:aStart.y,x2:p.x,y2:p.y}); }
     else if(curTool==="rect"){ if(Math.abs(p.x-aStart.x)>4&&Math.abs(p.y-aStart.y)>4) shapes.push({id:++shapeUid,type:"rect",color:curColor,widthMult:curWidth,x:Math.min(aStart.x,p.x),y:Math.min(aStart.y,p.y),w:Math.abs(p.x-aStart.x),h:Math.abs(p.y-aStart.y)}); }
@@ -2302,6 +2744,8 @@
     setSelected(-1);
   }
   $("#annotDelete").addEventListener("click",deleteSelectedShape);
+  $("#annotCropApply").addEventListener("click",applyCrop);
+  $("#annotCropRevert").addEventListener("click",revertCrop);
   document.addEventListener("keydown",e=>{
     if(!annot.classList.contains("open")) return;
     // Ignore key events from inputs
@@ -2310,16 +2754,17 @@
     if((e.key==="Delete"||e.key==="Backspace") && selectedIdx>=0){
       e.preventDefault(); deleteSelectedShape();
     } else if(e.key==="Escape"){
-      if(selectedIdx>=0){ e.preventDefault(); setSelected(-1); }
+      if(cropRect){ e.preventDefault(); cropRect=null; updateCropBtns(); redrawAnnot(); }
+      else if(selectedIdx>=0){ e.preventDefault(); setSelected(-1); }
     }
   });
 
   $("#annotUndo").addEventListener("click",()=>{ shapes.pop(); setSelected(-1); redrawAnnot(); });
-  $("#annotClear").addEventListener("click",()=>{ shapes=[]; setSelected(-1); redrawAnnot(); });
+  $("#annotClear").addEventListener("click",()=>{ shapes=[]; setSelected(-1); cropRect=null; updateCropBtns(); redrawAnnot(); });
   $("#annotCancel").addEventListener("click",closeAnnot);
   $("#annotSave").addEventListener("click",()=>{
     const s=shots.find(x=>x.id===annotEditId); if(!s){ closeAnnot(); return; }
-    const out=document.createElement("canvas"); out.width=baseImg.naturalWidth; out.height=baseImg.naturalHeight;
+    const out=document.createElement("canvas"); out.width=baseW(); out.height=baseH();
     const octx=out.getContext("2d"); octx.drawImage(baseImg,0,0);
     const inv=1/aScale;
     // Draw highlights first, then the rest — same ordering as on-canvas
@@ -2337,7 +2782,12 @@
   });
 
   /* ====== report metadata UI ====== */
+  function restoreFocusPrefs(){
+    focusMode = !!meta.focusMode;
+    if(meta.focusCaseId !== undefined) focusCaseId = meta.focusCaseId;
+  }
   function initMetaPanelUI(){
+    restoreFocusPrefs();
     $("#metaBrowser").textContent = detectedEnv.browser;
     $("#metaOS").textContent = detectedEnv.os;
     const bind = (id, key)=>{
@@ -2703,6 +3153,61 @@
   }
   // Build ordered groups: each case in cases[] order, then an "Ungrouped" bucket if any unassigned shots.
   // Preserves shots[] order within each group.
+  /* ---- Focus mode: status, sidebar, and visibility ---- */
+  // A case is Done when every shot is tagged; evidence-complete, not all-pass.
+  function caseStatusOf(items){
+    if(!items.length) return "empty";
+    return items.some(s=>s.status==="untested") ? "progress" : "done";
+  }
+  function pickDefaultFocus(groups){
+    const inProg = groups.find(g=>caseStatusOf(g.items)==="progress");
+    if(inProg) return inProg.id;
+    const withCase = groups.find(g=>g.ref);
+    return withCase ? withCase.id : (groups[0] ? groups[0].id : undefined);
+  }
+  function renderCaseNav(groups){
+    const nav = $("#caseNav"), wrap = $("#layoutWrap");
+    const usable = focusMode && cases.length > 0;
+    wrap.classList.toggle("nav-on", usable);
+    shotsEl.classList.toggle("focus-on", usable);
+    const fBtn = $("#btnFocusMode");
+    if(fBtn){ fBtn.classList.toggle("on", focusMode); fBtn.textContent = focusMode ? "All view" : "Focus mode"; }
+    if(!usable){ nav.innerHTML=""; return; }
+    if(focusCaseId === undefined || !groups.some(g=>g.id===focusCaseId)){
+      focusCaseId = pickDefaultFocus(groups);
+    }
+    const secs = { progress:[], done:[], empty:[] };
+    groups.forEach(g=>secs[caseStatusOf(g.items)].push(g));
+    const row = (g)=>{
+      const st = caseStatusOf(g.items);
+      const c = {pass:0,fail:0,blocked:0,untested:0}; g.items.forEach(s=>c[s.status]++);
+      const chips = st==="empty" ? "" :
+        (c.pass?`<span class="chip p">${c.pass}P</span>`:"") +
+        (c.fail?`<span class="chip f">${c.fail}F</span>`:"") +
+        (c.blocked?`<span class="chip b">${c.blocked}B</span>`:"") +
+        (c.untested?`<span class="chip u">${c.untested}U</span>`:"");
+      const tcid = g.ref && g.ref.tcid ? g.ref.tcid+" \u00B7 " : "";
+      const sub = st==="empty" ? `${tcid}no shots` : `${tcid}${g.items.length}`;
+      const gid = g.id===null ? "null" : g.id;
+      return `<div class="nav-row ${st==="done"?"done":""} ${g.id===focusCaseId?"on":""}" data-nav="${gid}" title="${escHtml(g.name)}">
+        <div class="nav-name">${st==="done"?`<span class="nav-check">\u2713</span>`:""}<span>${escHtml(g.name)}</span></div>
+        <div class="nav-meta"><span class="nav-sub">${sub}</span>${chips}</div>
+      </div>`;
+    };
+    let html = `<div class="nav-head"><span class="nav-title">TEST CASES</span></div>`;
+    if(secs.progress.length) html += `<div class="nav-sec">In progress</div>` + secs.progress.map(row).join("");
+    if(secs.done.length)     html += `<div class="nav-sec">Done</div>` + secs.done.map(row).join("");
+    if(secs.empty.length)    html += `<div class="nav-sec">Not started</div>` + secs.empty.map(row).join("");
+    nav.innerHTML = html;
+  }
+  function applyFocusVisibility(){
+    if(!(focusMode && cases.length>0)) return;
+    shotsEl.querySelectorAll(".group").forEach(g=>{
+      const gid = g.dataset.gid === "" ? null : +g.dataset.gid;
+      g.classList.toggle("focused", gid === focusCaseId || (focusCaseId===null && g.dataset.gid===""));
+    });
+  }
+
   function buildGroups(){
     const valid=new Set(cases.map(c=>c.id));
     const groups=[];
@@ -2806,7 +3311,10 @@
     const groups=buildGroups();
 
     if(!cases.length){
-      // flat list, no group chrome
+      // flat list, no group chrome. This path returns before the tail of
+      // render(), so the sidebar must be synced here too or it keeps stale
+      // cases after Reset / deleting the last case.
+      renderCaseNav(groups);
       groups[0] && groups[0].items.forEach(s=> shotsEl.insertAdjacentHTML("beforeend", cardHtml(s, idxOf.get(s.id))) );
       return;
     }
@@ -2859,6 +3367,8 @@
       shotsEl.appendChild(wrap);
     });
     updateSelectionUI();
+    renderCaseNav(groups);
+    applyFocusVisibility();
     if(typeof updateDemoBanner === "function") updateDemoBanner();
     // Re-apply the current search filter to the freshly-rendered cards
     applySearchFilterUI();
@@ -2995,7 +3505,48 @@
   /* ====== buttons + hotkeys ====== */
   $("#btnFull").addEventListener("click",captureFull);
   $("#btnRegion").addEventListener("click",captureRegion);
-  $("#btnAddCase").addEventListener("click",()=>{ newCase(); render(); scheduleSave(); toast("Test case added","ok"); });
+  $("#btnAddCase").addEventListener("click",()=>{ const c=newCase(); if(focusMode) focusCaseId=c.id; render(); scheduleSave(); toast("Test case added","ok"); });
+  $("#btnFocusMode").addEventListener("click",()=>{
+    focusMode = !focusMode;
+    meta.focusMode = focusMode;
+    render(); scheduleSave();
+  });
+  const caseNavEl = $("#caseNav");
+  function navRowGid(el){
+    const row = el && el.closest ? el.closest(".nav-row") : null;
+    if(!row) return undefined;
+    return row.dataset.nav === "null" ? null : +row.dataset.nav;
+  }
+  caseNavEl.addEventListener("click",(e)=>{
+    const gid = navRowGid(e.target);
+    if(gid === undefined) return;
+    focusCaseId = gid;
+    meta.focusCaseId = gid;
+    render(); scheduleSave();
+  });
+  // Drop a shot (dragged by its #N badge) onto a sidebar row to move it there
+  caseNavEl.addEventListener("dragover",(e)=>{
+    if(dragSrcId==null) return;
+    const row = e.target.closest(".nav-row");
+    caseNavEl.querySelectorAll(".drop-ok").forEach(r=>r.classList.remove("drop-ok"));
+    if(row){ e.preventDefault(); e.dataTransfer.dropEffect="move"; row.classList.add("drop-ok"); }
+  });
+  caseNavEl.addEventListener("dragleave",(e)=>{
+    if(!caseNavEl.contains(e.relatedTarget)) caseNavEl.querySelectorAll(".drop-ok").forEach(r=>r.classList.remove("drop-ok"));
+  });
+  caseNavEl.addEventListener("drop",(e)=>{
+    if(dragSrcId==null) return;
+    const gid = navRowGid(e.target);
+    caseNavEl.querySelectorAll(".drop-ok").forEach(r=>r.classList.remove("drop-ok"));
+    if(gid === undefined) return;
+    e.preventDefault();
+    const s = shots.find(x=>x.id===dragSrcId);
+    if(!s) return;
+    s.caseId = gid;
+    dragSrcId = null;
+    render(); scheduleSave();
+    toast("Moved","ok");
+  });
   /* ---- Search input wiring ---- */
   const searchInput = $("#searchInput"), searchClear = $("#searchClear");
   searchInput.addEventListener("input", ()=>{ setSearchQuery(searchInput.value); });
@@ -3155,6 +3706,38 @@
     toast("Reordered","ok");
   });
 
+  /* ====== Brand mark for export covers ====== */
+  // Draw the capture-frame N on a canvas and return PNG bytes. Rendered at
+  // runtime so the file carries no embedded image asset.
+  function logoPngBytes(px){
+    const c = document.createElement("canvas");
+    c.width = px; c.height = px;
+    const x = c.getContext("2d");
+    const u = px / 34;                       // scale from the 34-unit design grid
+    x.lineCap = "round"; x.lineJoin = "round";
+    x.strokeStyle = "#E07A2F"; x.lineWidth = 3 * u;
+    x.beginPath();
+    x.moveTo(3*u, 9*u);  x.lineTo(3*u, 4*u);  x.lineTo(8*u, 4*u);
+    x.moveTo(26*u, 4*u); x.lineTo(31*u, 4*u); x.lineTo(31*u, 9*u);
+    x.moveTo(31*u,25*u); x.lineTo(31*u,30*u); x.lineTo(26*u,30*u);
+    x.moveTo(8*u, 30*u); x.lineTo(3*u, 30*u); x.lineTo(3*u, 25*u);
+    x.stroke();
+    x.strokeStyle = "#14213D"; x.lineWidth = 3 * u;
+    x.beginPath(); x.arc(17*u, 17*u, 6.5*u, 0, Math.PI*2); x.stroke();
+    x.beginPath();
+    x.moveTo(17*u, 6*u);  x.lineTo(17*u, 9*u);
+    x.moveTo(17*u, 28*u); x.lineTo(17*u, 25*u);
+    x.moveTo(6*u, 17*u);  x.lineTo(9*u, 17*u);
+    x.moveTo(28*u, 17*u); x.lineTo(25*u, 17*u);
+    x.stroke();
+    x.fillStyle = "#14213D";
+    x.beginPath(); x.arc(17*u, 17*u, 2.2*u, 0, Math.PI*2); x.fill();
+    const b64 = c.toDataURL("image/png").split(",")[1];
+    const bin = atob(b64), bytes = new Uint8Array(bin.length);
+    for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
   /* ====== Onboarding: demo data + welcome actions ====== */
   // Generate a believable "app screenshot" on a canvas so we don't bloat the
   // HTML file with embedded base64 images. Returns a data URL.
@@ -3287,7 +3870,22 @@
 
   function exportSession(){
     if(!shots.length){ toast("Nothing to export — capture a shot first.","err"); return; }
-    // Deep-clone data + freeze timestamps as ISO strings
+    // Session export mirrors the Word/PDF exports: only cases ticked "Include" go out.
+    // Shots belonging to an excluded case are dropped with it, so the file never
+    // carries orphaned shots pointing at a case that isn't there.
+    // Ungrouped shots have no Include toggle of their own, so they travel with the
+    // session as unfinished work state for the receiving tester to organise.
+    const includedCases   = cases.filter(c => !c.excluded);
+    const includedCaseIds = new Set(includedCases.map(c => c.id));
+    const includedShots   = shots.filter(s => s.caseId == null || includedCaseIds.has(s.caseId));
+    const skippedCases    = cases.length - includedCases.length;
+    const skippedShots    = shots.length - includedShots.length;
+    if(!includedShots.length){
+      toast(skippedCases
+        ? `Every case is excluded — tick at least one "Include" to export the session.`
+        : "Nothing to export.", "err");
+      return;
+    }
     const payload = {
       format: "now-captures-session",
       version: 1,
@@ -3300,8 +3898,9 @@
       },
       title: $("#docTitle").value || "Test Evidence Report",
       meta: (()=>{ const m={...meta}; delete m.metaCollapsed; return m; })(),
-      cases: cases.map(c=>({ id:c.id, name:c.name, tcid:c.tcid||"", excluded:!!c.excluded })),
-      shots: shots.map(s=>({
+      // Everything exported is by definition included, so excluded is always false here.
+      cases: includedCases.map(c=>({ id:c.id, name:c.name, tcid:c.tcid||"", excluded:false })),
+      shots: includedShots.map(s=>({
         id:s.id, dataUrl:s.dataUrl,
         step:s.step||"", desc:s.desc||"",
         expected:s.expected||"", actual:s.actual||"", bugId:s.bugId||"",
@@ -3319,7 +3918,12 @@
     const filename   = `${testerPart}${titlePart}_${datePart}.ncap.json`;
     saveAs(blob, filename);
     const kb = Math.round(blob.size/1024);
-    toast(`Session exported: ${shots.length} shot${shots.length===1?"":"s"}, ${cases.length} case${cases.length===1?"":"s"} (${kb} KB)`, "ok");
+    const parts = [
+      `${includedShots.length} shot${includedShots.length===1?"":"s"}`,
+      `${includedCases.length} case${includedCases.length===1?"":"s"}`
+    ];
+    if(skippedCases) parts.push(`${skippedCases} excluded case${skippedCases===1?"":"s"} (${skippedShots} shot${skippedShots===1?"":"s"}) skipped`);
+    toast(`Session exported: ${parts.join(", ")} \u00B7 ${kb} KB`, "ok");
   }
 
   async function importSessionFromFile(file){
@@ -3483,6 +4087,11 @@
     const allShots=[]; groupsToInclude.forEach(g=>g.items.forEach(s=>allShots.push(s)));
     const c={pass:0,fail:0,blocked:0,untested:0}; allShots.forEach(s=>c[s.status]++);
     const children=[];
+    try{
+      children.push(new D.Paragraph({ spacing:{after:100}, children:[
+        new D.ImageRun({ data: logoPngBytes(128), transformation:{ width:32, height:32 } })
+      ] }));
+    } catch(e){ /* cover works without the mark */ }
     children.push(new D.Paragraph({ text:title, heading:D.HeadingLevel.TITLE }));
     children.push(new D.Paragraph({ spacing:{after:160}, children:[ new D.TextRun({ text:`Generated ${new Date().toLocaleString()} \u00B7 ${allShots.length} screenshot(s) \u00B7 ${groupsToInclude.length} group(s)`, italics:true, color:"6B6557", size:20 }) ] }));
     // ---- Compliance-mode cover page: tester, environment, protocol, approver ----
@@ -3635,7 +4244,13 @@
     function wrap(text,f,size,maxW){ const out=[]; text.split(/\n/).forEach(par=>{ const words=par.split(/\s+/); let cur=""; for(const w of words){ const t=cur?cur+" "+w:w; if(f.widthOfTextAtSize(t,size)>maxW && cur){ out.push(cur); cur=w; } else cur=t; } out.push(cur); }); return out; }
     function drawText(text,f,size,color,maxW,lh){ const lines=wrap(text,f,size,maxW||CONTENT_W); lines.forEach(ln=>{ ensure(size+ (lh||4)); page.drawText(ln,{x:M,y:y-size,size,font:f,color}); y-=size+(lh||4); }); }
     // title
-    page.drawText(title,{x:M,y:y-22,size:22,font:bold,color:INK}); y-=34;
+    try{
+      const logoImg = await doc.embedPng(logoPngBytes(128));
+      page.drawImage(logoImg, { x:M, y:y-26, width:26, height:26 });
+      page.drawText(title,{x:M+34,y:y-22,size:22,font:bold,color:INK}); y-=38;
+    } catch(e){
+      page.drawText(title,{x:M,y:y-22,size:22,font:bold,color:INK}); y-=34;
+    }
     drawText(`Generated ${new Date().toLocaleString()} \u00B7 ${allShots.length} screenshot(s) \u00B7 ${groupsToInclude.length} group(s)`, ital,10,MUTED,CONTENT_W,6);
     y-=8;
     // summary chips row
