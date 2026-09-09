@@ -566,7 +566,7 @@
       <circle class="mark-dot" cx="17" cy="17" r="2.2"/>
     </svg>
     <span class="logo-text"><span class="logo-now">Now</span><span class="logo-cap">Captures</span></span>
-    <span class="ver">v4.12.0 · 2-min clips</span>
+    <span class="ver">v4.13.0 · 2-min clips</span>
   </div>
   <div class="doc-title-wrap"><label for="docTitle">Report</label><input id="docTitle" value="Test Evidence Report" spellcheck="false" /></div>
   <div class="save-state" id="saveState"><span class="pip"></span><span id="saveText">Saved</span></div>
@@ -858,6 +858,7 @@
     </div>
     <div class="foot">
       <span class="note">Built in your browser. Nothing is uploaded.</span>
+      <button id="autoScrub" style="display:none" title="Replace emails, phone numbers and card-like numbers in the prompt with placeholders. Your screenshots and notes are not changed."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h6M15 12h6"/><rect x="9" y="8" width="6" height="8" rx="1"/></svg>Scrub flagged text</button>
       <button id="autoCloseBtn">Close</button>
       <button class="primary" id="autoCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy prompt</button>
     </div>
@@ -3350,7 +3351,20 @@
   }
   cmClose.addEventListener("click", closeCopyMove);
   cmCancel.addEventListener("click", closeCopyMove);
-  cmModal.addEventListener("click", e=>{ if(e.target===cmModal) closeCopyMove(); });
+  // A click event fires on the nearest common ancestor of where the mouse went
+  // down and where it came up. Drag-selecting text inside the dialog and
+  // releasing over the backdrop therefore reports the backdrop as the target,
+  // which would dismiss the dialog mid-edit. Require the press to start on the
+  // backdrop too.
+  function backdropDismiss(el, close){
+    let downOnBackdrop = false;
+    el.addEventListener("mousedown", e=>{ downOnBackdrop = (e.target === el); });
+    el.addEventListener("click", e=>{
+      if(e.target === el && downOnBackdrop) close();
+      downOnBackdrop = false;
+    });
+  }
+  backdropDismiss(cmModal, closeCopyMove);
   cmModal.querySelector(".mode").addEventListener("click", e=>{
     const b = e.target.closest("[data-mode]"); if(!b) return;
     cmMode = b.dataset.mode;
@@ -4058,16 +4072,26 @@
   }
 
   /* ---- dialog wiring ---- */
-  let autoCaseId = null, autoOcrCache = {};
+  let autoCaseId = null, autoOcrCache = {}, autoPristine = "";
   const autoModal = $("#autoModal");
   function autoItems(){ return shots.filter(s=>s.caseId===autoCaseId); }
-  function refreshAutoPrompt(){
+  function autoIsEdited(){ return $("#autoText").value !== autoPristine; }
+  // Rebuilding overwrites the textarea, so anything hand-edited would vanish
+  // without warning. Ask first, and never ask when nothing has been changed.
+  function refreshAutoPrompt(force){
+    if(!force && autoIsEdited() &&
+       !confirm("You've edited this prompt. Rebuilding will replace your changes. Continue?")){
+      return false;
+    }
     const fwKey = $("#autoFramework").value;
-    $("#autoText").value = buildAutomationPrompt(autoCaseId, fwKey, autoOcrCache);
+    autoPristine = buildAutomationPrompt(autoCaseId, fwKey, autoOcrCache);
+    $("#autoText").value = autoPristine;
     const scan = autoScanLeaks(autoItems());
     const msg = autoLeakMessage(scan);
     $("#autoWarn").style.display = msg ? "flex" : "none";
     $("#autoWarnText").textContent = msg;
+    $("#autoScrub").style.display = scan.piiHits.length ? "inline-flex" : "none";
+    return true;
   }
   function openAutoModal(caseId){
     autoCaseId = caseId; autoOcrCache = {};
@@ -4076,18 +4100,23 @@
     $("#autoSub").textContent = `${(c && c.name) || "Untitled case"} \u00B7 ${n} screenshot${n===1?"":"s"}`;
     $("#autoOcr").checked = false;
     $("#autoOcrLabel").textContent = "Read field labels from images";
-    refreshAutoPrompt();
+    $("#autoFramework").value = autoLastFw;
+    refreshAutoPrompt(true);
     autoModal.classList.add("show");
     $("#autoText").focus();
   }
   function closeAutoModal(){ autoModal.classList.remove("show"); autoCaseId = null; autoOcrCache = {}; }
   $("#autoClose").addEventListener("click", closeAutoModal);
   $("#autoCloseBtn").addEventListener("click", closeAutoModal);
-  autoModal.addEventListener("click", e=>{ if(e.target===autoModal) closeAutoModal(); });
-  $("#autoFramework").addEventListener("change", refreshAutoPrompt);
+  backdropDismiss(autoModal, closeAutoModal);
+  let autoLastFw = "atf";
+  $("#autoFramework").addEventListener("change", e=>{
+    if(refreshAutoPrompt()) autoLastFw = e.target.value;
+    else e.target.value = autoLastFw;   // user kept their edits; undo the switch
+  });
 
   $("#autoOcr").addEventListener("change", async e=>{
-    if(!e.target.checked){ autoOcrCache = {}; refreshAutoPrompt(); return; }
+    if(!e.target.checked){ autoOcrCache = {}; refreshAutoPrompt(true); return; }
     const items = autoItems();
     if(!items.length){ e.target.checked=false; return; }
     const label = $("#autoOcrLabel");
@@ -4101,7 +4130,7 @@
         if(t) autoOcrCache[items[i].id] = t.slice(0, 600);
       }
       label.textContent = "Field labels included";
-      refreshAutoPrompt();
+      refreshAutoPrompt(true);
     }catch(err){
       console.error("[auto-ocr]", err);
       autoOcrCache = {}; e.target.checked = false;
@@ -4110,6 +4139,29 @@
     }finally{
       e.target.disabled = false;
     }
+  });
+
+  // Replaces detected identifiers in the prompt text only. The shots and notes
+  // in the session are untouched, so this is a safe thing to do by accident.
+  function scrubPromptText(text){
+    let n = 0;
+    const counters = {};
+    const swap = (re, tag) => {
+      text = text.replace(new RegExp(re.source, re.flags.includes("g") ? re.flags : re.flags + "g"), () => {
+        counters[tag] = (counters[tag] || 0) + 1; n++;
+        return `<${tag}_${counters[tag]}>`;
+      });
+    };
+    swap(PII_PATTERNS[0].re, "EMAIL");
+    swap(PII_PATTERNS[2].re, "CARD_NUMBER");
+    swap(PII_PATTERNS[1].re, "PHONE");
+    return { text, n };
+  }
+  $("#autoScrub").addEventListener("click", ()=>{
+    const r = scrubPromptText($("#autoText").value);
+    if(!r.n){ toast("Nothing left to scrub","ok"); return; }
+    $("#autoText").value = r.text;
+    toast(`${r.n} value${r.n===1?"":"s"} replaced with placeholders \u2014 your screenshots and notes are unchanged`,"ok");
   });
 
   $("#autoCopy").addEventListener("click", ()=>{
