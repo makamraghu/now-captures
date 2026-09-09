@@ -522,6 +522,37 @@
   #copyMoveModal .foot button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   #copyMoveModal .foot button.primary:hover{background:#d06a1f;border-color:#d06a1f}
   #copyMoveModal .foot button.primary:disabled{opacity:.55;cursor:not-allowed}
+  /* ---- Automation prompt builder ---- */
+  #autoModal{display:none;position:fixed;inset:0;z-index:130;background:rgba(20,33,61,.5);align-items:center;justify-content:center;padding:20px}
+  #autoModal.show{display:flex}
+  #autoModal .box{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:min(680px,100%);max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+  #autoModal .head{padding:16px 20px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  #autoModal .head h2{font-size:17px;color:var(--ink);font-weight:650;margin:0}
+  #autoModal .head .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  #autoModal .head .close{margin-left:auto;border:none;background:transparent;color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:20px;line-height:1;align-self:flex-start}
+  #autoModal .head .close:hover{background:var(--paper);color:var(--ink)}
+  #autoModal .opts{padding:13px 20px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+  #autoModal .opts label.f{font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:5px}
+  #autoModal .opts select{font-family:var(--sans);font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);min-width:210px}
+  #autoModal .opts .chk{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);padding-bottom:8px;cursor:pointer}
+  #autoModal .opts .chk input{accent-color:var(--accent);width:15px;height:15px;margin:0;cursor:pointer}
+  #autoModal .warn{margin:13px 20px 0;background:#fdf3e3;border:1px solid #f0d9b0;border-radius:9px;padding:10px 12px;display:flex;gap:9px;font-size:12.5px;color:#7a4d09;line-height:1.5}
+  #autoModal .warn svg{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+  #autoModal .body{padding:14px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column}
+  #autoModal .body .lbl{font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
+  #autoModal textarea{width:100%;flex:1;min-height:220px;font-family:var(--mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:12px;line-height:1.6;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:12px;resize:vertical}
+  #autoModal textarea:focus{outline:none;border-color:var(--accent)}
+  #autoModal .foot{padding:13px 20px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;background:var(--paper)}
+  #autoModal .foot .note{font-size:12px;color:var(--muted);flex:1}
+  #autoModal .foot button{font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);display:inline-flex;align-items:center;gap:7px}
+  #autoModal .foot button:hover{border-color:var(--ink)}
+  #autoModal .foot button svg{width:15px;height:15px}
+  #autoModal .foot button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  #autoModal .foot button.primary:hover{background:#d06a1f;border-color:#d06a1f}
+  #autoModal .foot button:disabled{opacity:.55;cursor:not-allowed}
+  .auto-btn{border:1px solid var(--line);background:#fff;color:var(--ink);font-family:var(--sans);font-size:12px;font-weight:600;padding:5px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .auto-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .auto-btn svg{width:14px;height:14px}
 
   </style>
 </head>
@@ -535,7 +566,7 @@
       <circle class="mark-dot" cx="17" cy="17" r="2.2"/>
     </svg>
     <span class="logo-text"><span class="logo-now">Now</span><span class="logo-cap">Captures</span></span>
-    <span class="ver">v4.11.0 · 2-min clips</span>
+    <span class="ver">v4.12.0 · 2-min clips</span>
   </div>
   <div class="doc-title-wrap"><label for="docTitle">Report</label><input id="docTitle" value="Test Evidence Report" spellcheck="false" /></div>
   <div class="save-state" id="saveState"><span class="pip"></span><span id="saveText">Saved</span></div>
@@ -791,6 +822,44 @@
       <span class="im-sp"></span>
       <button id="imMerge" title="Add the imported shots and cases alongside your current session">Merge with current</button>
       <button id="imReplace" class="danger" title="Replace everything in the current session with the imported data — cannot be undone">Replace current</button>
+    </div>
+  </div>
+</div>
+
+<div id="autoModal" role="dialog" aria-modal="true" aria-labelledby="autoTitle">
+  <div class="box">
+    <div class="head">
+      <div>
+        <h2 id="autoTitle">Generate automation prompt</h2>
+        <div class="sub" id="autoSub"></div>
+      </div>
+      <button class="close" id="autoClose" title="Close">✕</button>
+    </div>
+    <div class="opts">
+      <div>
+        <label class="f" for="autoFramework">Target framework</label>
+        <select id="autoFramework">
+          <option value="atf">ServiceNow ATF steps</option>
+          <option value="playwright">Playwright (TypeScript)</option>
+          <option value="selenium">Selenium (Java)</option>
+        </select>
+      </div>
+      <label class="chk" title="Runs OCR over this case's screenshots and adds the visible text as hints. Slower, and adds noise.">
+        <input type="checkbox" id="autoOcr" /> <span id="autoOcrLabel">Read field labels from images</span>
+      </label>
+    </div>
+    <div class="warn" id="autoWarn" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <span id="autoWarnText"></span>
+    </div>
+    <div class="body">
+      <div class="lbl">Prompt — edit before copying if you need to</div>
+      <textarea id="autoText" spellcheck="false"></textarea>
+    </div>
+    <div class="foot">
+      <span class="note">Built in your browser. Nothing is uploaded.</span>
+      <button id="autoCloseBtn">Close</button>
+      <button class="primary" id="autoCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy prompt</button>
     </div>
   </div>
 </div>
@@ -3356,6 +3425,7 @@
   // Close modal on Escape
   document.addEventListener("keydown", e=>{
     if(e.key==="Escape" && cmModal.classList.contains("show")){ closeCopyMove(); }
+    if(e.key==="Escape" && autoModal.classList.contains("show")){ closeAutoModal(); }
   });
   function fmtTime(d){ return d.toLocaleString(undefined,{year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}); }
   function renderSummary(){
@@ -3555,6 +3625,8 @@
         `<button class="del-case" data-del-case="${g.id}" title="Delete this test case and all screenshots in it (cannot be undone)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>`;
       const tcidField = (g.id==null || !isComplianceMode()) ? "" :
         `<input class="case-tcid" data-case-tcid="${g.id}" value="${escAttr((g.ref&&g.ref.tcid)||"")}" placeholder="TC-ID" title="Test case ID / reference" maxlength="40" />`;
+      const autoBtn = (g.id==null || !g.items.length) ? "" :
+        `<button class="auto-btn" data-auto-case="${g.id}" title="Build an AI prompt for automating this test case from its steps and notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 4v4M9 14h.01M15 14h.01"/></svg>Automation prompt</button>`;
       const includeToggle = g.id==null ? "" :
         `<label class="case-include ${!isExcluded?"on":""}" title="Tick to include this case in Export Word / Export PDF. Untick to leave it out of the next report."><input type="checkbox" data-case-include="${g.id}" ${!isExcluded?"checked":""}/><span>${isExcluded?"Excluded":"Include"}</span></label>`;
       // Per-case Select-all button: tri-state — all/some/none of THIS group is selected
@@ -3580,6 +3652,7 @@
           </span>
           ${tcidField}
           ${selectAllBtn}
+          ${autoBtn}
           ${includeToggle}
           ${delBtn}
         </div>
@@ -3641,6 +3714,10 @@
     if(cf!=null){ const s=shots.find(x=>x.id===+cf); if(s){ s.caseId = e.target.value===""?null:+e.target.value; render(); scheduleSave(); } }
   });
   shotsEl.addEventListener("click",e=>{
+    // Automation prompt — checked before the header collapse toggle below,
+    // otherwise clicking the button would also fold the case shut.
+    const ab=e.target.closest("[data-auto-case]");
+    if(ab){ e.stopPropagation(); openAutoModal(+ab.dataset.autoCase); return; }
     // selection checkbox on a shot thumbnail
     const sel=e.target.closest(".sel-check");
     if(sel){ e.stopPropagation(); e.preventDefault();
@@ -3842,6 +3919,213 @@
   });
   window.addEventListener("resize", hideStepSug);
   window.addEventListener("scroll", ()=>{ if(sugInput) positionStepSug(sugInput); }, true);
+
+  /* ====== Automation prompt builder ====== */
+  // Everything here is deterministic string assembly — no API key, no network,
+  // no screenshots leaving the browser. The tester copies the prompt into
+  // whichever AI tool they already use.
+  const AUTO_FRAMEWORKS = {
+    atf: {
+      label: "ServiceNow ATF",
+      preamble: [
+        "You are writing a ServiceNow Automated Test Framework (ATF) test.",
+        "",
+        "Build the test as an ordered list of ATF test steps. Prefer the standard step",
+        "configurations: Open a New Form, Open an Existing Record, Set Field Value,",
+        "Click a UI Action, Field State Validation, Record Validation, Record Query.",
+        "For each step give the step type, the table, and the field or action it targets."
+      ],
+      notes: [
+        "ATF runs inside the ServiceNow client, so do not write CSS or XPath selectors.",
+        "Reference fields by their column name (for example short_description, caller_id),",
+        "not by their visible label. If you are unsure of a column name, say so and ask."
+      ]
+    },
+    playwright: {
+      label: "Playwright",
+      preamble: [
+        "You are writing a Playwright test in TypeScript.",
+        "",
+        "Produce a single spec file using @playwright/test. Use role-based and",
+        "label-based locators (getByRole, getByLabel) rather than brittle CSS chains.",
+        "Add explicit waits for navigation and for the form to become interactive."
+      ],
+      notes: [
+        "ServiceNow renders most forms inside an iframe named gsft_main. Scope form",
+        "interactions with page.frameLocator('#gsft_main') or the test will not find",
+        "the fields. Element ids follow the pattern <table>.<column>, for example",
+        "#incident\\\\.short_description — the dot must be escaped in a CSS selector."
+      ]
+    },
+    selenium: {
+      label: "Selenium",
+      preamble: [
+        "You are writing a Selenium test in Java with JUnit 5.",
+        "",
+        "Produce one test class. Use explicit WebDriverWait conditions rather than",
+        "Thread.sleep, and keep locators in a small page-object class."
+      ],
+      notes: [
+        "ServiceNow renders most forms inside an iframe named gsft_main. Call",
+        "driver.switchTo().frame(\"gsft_main\") before touching form fields and switch",
+        "back to the default content before using the header or navigator.",
+        "Element ids follow the pattern <table>.<column>, for example incident.short_description."
+      ]
+    }
+  };
+
+  function autoStatusWord(st){
+    return st==="pass" ? "passed" : st==="fail" ? "FAILED" : st==="blocked" ? "blocked" : "not yet run";
+  }
+
+  // Flag text that looks like it carries customer data. This is a prompt the
+  // tester will paste into an external service, so a redacted screenshot with
+  // the same details still sitting in its description is a real leak.
+  const PII_PATTERNS = [
+    { re: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i, what: "an email address" },
+    { re: /(?:\+?\d[\s().-]?){9,}\d/,                what: "a phone number" },
+    { re: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/, what: "a long card-like number" }
+  ];
+  function autoScanLeaks(items){
+    const redactedWithText = [], piiHits = [];
+    items.forEach((s,i)=>{
+      const n = i+1;
+      const text = [s.step, s.desc, s.expected, s.actual].filter(t=>t&&t.trim()).join(" \u00B7 ");
+      if(!text) return;
+      if(s.redactions) redactedWithText.push(n);
+      PII_PATTERNS.forEach(p=>{ if(p.re.test(text) && !piiHits.some(h=>h.n===n)) piiHits.push({n, what:p.what}); });
+    });
+    return { redactedWithText, piiHits };
+  }
+  function autoLeakMessage(scan){
+    const parts = [];
+    if(scan.piiHits.length){
+      parts.push(`Step${scan.piiHits.length===1?"":"s"} ${scan.piiHits.map(h=>h.n).join(", ")} contain what looks like ${[...new Set(scan.piiHits.map(h=>h.what))].join(" and ")}.`);
+    }
+    if(scan.redactedWithText.length){
+      parts.push(`Step${scan.redactedWithText.length===1?"":"s"} ${scan.redactedWithText.join(", ")} ${scan.redactedWithText.length===1?"has a redacted screenshot":"have redacted screenshots"} but still ${scan.redactedWithText.length===1?"has":"have"} text you wrote by hand.`);
+    }
+    if(!parts.length) return "";
+    return parts.join(" ") + " Masking the image does not mask the words. Review before pasting this anywhere.";
+  }
+
+  function buildAutomationPrompt(caseId, frameworkKey, ocrText){
+    const fw = AUTO_FRAMEWORKS[frameworkKey] || AUTO_FRAMEWORKS.atf;
+    const c = cases.find(x=>x.id===caseId);
+    const items = shots.filter(s=>s.caseId===caseId);
+    const L = [...fw.preamble, ""];
+
+    L.push("## Context");
+    if(meta.urlUnderTest) L.push(`Application URL: ${meta.urlUnderTest}`);
+    if(meta.buildVersion) L.push(`Build / version: ${meta.buildVersion}`);
+    if(meta.protocol)     L.push(`Test protocol: ${meta.protocol}`);
+    if(typeof detectEnv==="function"){ const e=detectEnv(); if(e && (e.browser||e.os)) L.push(`Browser / OS: ${[e.browser,e.os].filter(Boolean).join(" on ")}`); }
+    if(c && c.tcid)       L.push(`Test case ID: ${c.tcid}`);
+    L.push(`Test case: ${(c && c.name) || "Untitled case"}`);
+    L.push(`Steps recorded: ${items.length}`);
+    L.push("");
+
+    L.push("## Steps as executed by a manual tester");
+    if(!items.length){
+      L.push("(No screenshots are assigned to this test case yet.)");
+    }
+    items.forEach((s,i)=>{
+      L.push(`### Step ${i+1} \u2014 ${(s.step||"").trim() || "(no title given)"}`);
+      if(s.desc && s.desc.trim())     L.push(`What the tester did: ${s.desc.trim()}`);
+      if(s.expected && s.expected.trim()) L.push(`Expected: ${s.expected.trim()}`);
+      if(s.actual && s.actual.trim())     L.push(`Actual: ${s.actual.trim()}`);
+      L.push(`Result: ${autoStatusWord(s.status)}`);
+      if(s.bugId && s.bugId.trim())   L.push(`Defect reference: ${s.bugId.trim()}`);
+      if(s.redactions)                L.push(`Note: this screenshot had ${s.redactions} area(s) masked, so some on-screen values are deliberately missing.`);
+      const hint = ocrText && ocrText[s.id];
+      if(hint)                        L.push(`Text visible on screen: ${hint}`);
+      L.push("");
+    });
+
+    L.push("## What this evidence does not contain");
+    L.push("These steps were reconstructed from screenshots and hand-written notes.");
+    L.push("No element ids, selectors, or locators were captured.");
+    fw.notes.forEach(n=>L.push(n));
+    L.push("");
+    L.push("## How to respond");
+    L.push("1. List any locator, credential, or test-data value you need before the test can run, and ask for it. Do not invent selectors.");
+    L.push("2. Then write the test, marking every place you had to guess with a TODO comment.");
+    const failed = items.filter(s=>s.status==="fail");
+    if(failed.length){
+      L.push(`3. Steps ${failed.map((s,i)=>items.indexOf(s)+1).join(", ")} failed during manual testing. Write the assertion for the expected behaviour, not the observed failure, so the test passes once the defect is fixed.`);
+    }
+    return L.join("\n");
+  }
+
+  /* ---- dialog wiring ---- */
+  let autoCaseId = null, autoOcrCache = {};
+  const autoModal = $("#autoModal");
+  function autoItems(){ return shots.filter(s=>s.caseId===autoCaseId); }
+  function refreshAutoPrompt(){
+    const fwKey = $("#autoFramework").value;
+    $("#autoText").value = buildAutomationPrompt(autoCaseId, fwKey, autoOcrCache);
+    const scan = autoScanLeaks(autoItems());
+    const msg = autoLeakMessage(scan);
+    $("#autoWarn").style.display = msg ? "flex" : "none";
+    $("#autoWarnText").textContent = msg;
+  }
+  function openAutoModal(caseId){
+    autoCaseId = caseId; autoOcrCache = {};
+    const c = cases.find(x=>x.id===caseId);
+    const n = autoItems().length;
+    $("#autoSub").textContent = `${(c && c.name) || "Untitled case"} \u00B7 ${n} screenshot${n===1?"":"s"}`;
+    $("#autoOcr").checked = false;
+    $("#autoOcrLabel").textContent = "Read field labels from images";
+    refreshAutoPrompt();
+    autoModal.classList.add("show");
+    $("#autoText").focus();
+  }
+  function closeAutoModal(){ autoModal.classList.remove("show"); autoCaseId = null; autoOcrCache = {}; }
+  $("#autoClose").addEventListener("click", closeAutoModal);
+  $("#autoCloseBtn").addEventListener("click", closeAutoModal);
+  autoModal.addEventListener("click", e=>{ if(e.target===autoModal) closeAutoModal(); });
+  $("#autoFramework").addEventListener("change", refreshAutoPrompt);
+
+  $("#autoOcr").addEventListener("change", async e=>{
+    if(!e.target.checked){ autoOcrCache = {}; refreshAutoPrompt(); return; }
+    const items = autoItems();
+    if(!items.length){ e.target.checked=false; return; }
+    const label = $("#autoOcrLabel");
+    e.target.disabled = true;
+    try{
+      const T = await loadOCR();
+      for(let i=0;i<items.length;i++){
+        label.textContent = `Reading image ${i+1} of ${items.length}\u2026`;
+        const r = await T.recognize(items[i].dataUrl, "eng");
+        const t = (r && r.data && r.data.text || "").trim().replace(/\s+/g," ");
+        if(t) autoOcrCache[items[i].id] = t.slice(0, 600);
+      }
+      label.textContent = "Field labels included";
+      refreshAutoPrompt();
+    }catch(err){
+      console.error("[auto-ocr]", err);
+      autoOcrCache = {}; e.target.checked = false;
+      label.textContent = "Read field labels from images";
+      toast("OCR failed: "+(err.message||err), "err");
+    }finally{
+      e.target.disabled = false;
+    }
+  });
+
+  $("#autoCopy").addEventListener("click", ()=>{
+    const text = $("#autoText").value;
+    // Clipboard writes reject rather than throw, so a try/catch around this
+    // would silently miss the failure. Chain the fallback instead.
+    const fallback = ()=>{
+      const ta = $("#autoText");
+      ta.focus(); ta.select();
+      const done = document.execCommand && document.execCommand("copy");
+      toast(done ? "Prompt copied" : "Couldn't copy \u2014 the prompt is selected, press Ctrl/Cmd+C", done?"ok":"err");
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>toast("Prompt copied","ok")).catch(fallback);
+    } else fallback();
+  });
 
   $("#captureCaseSel").addEventListener("change", e=>{
     setCaptureTarget(e.target.value==="" ? null : +e.target.value);
