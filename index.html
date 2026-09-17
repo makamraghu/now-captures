@@ -90,7 +90,15 @@
   .btn svg{width:16px;height:16px;flex:none}
 
   main{max-width:1080px;margin:0 auto;padding:28px}
-  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);margin-bottom:16px}
+  .toolbar{display:block;padding:8px 20px 10px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);margin-bottom:16px}
+  .tb-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px 0}
+  .tb-row + .tb-row{border-top:1px solid var(--line)}
+  .tb-label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);width:66px;flex-shrink:0}
+  .tb-row .grp{display:contents}
+  .btn.danger{border-color:#e2b6b1;color:#a33124}
+  .btn.danger:hover:not(:disabled){background:#fdf1ef;border-color:#c0392b}
+  .btn.icon-only{padding:9px 11px}
+  @media (max-width:720px){ .tb-label{width:100%} }
   .toolbar .grp{display:flex;gap:10px;flex-wrap:wrap}
   .toolbar .spacer{flex:1}
 
@@ -215,6 +223,10 @@
   .cap-target select{border:none;background:transparent;font:inherit;font-size:13px;font-weight:600;color:var(--ink);max-width:220px;cursor:pointer;padding:2px 0}
   .cap-target select:focus{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
   .cap-target.is-ungrouped{border-style:dashed}
+  .doc-type{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 10px}
+  .doc-type label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+  .doc-type select{border:none;background:transparent;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;padding:2px 0}
+  .doc-type select:focus{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
   /* ---- Step / title suggestions ---- */
   #stepSug{position:absolute;z-index:200;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(20,33,61,.16);padding:4px;min-width:200px;max-width:min(420px,92vw);display:none}
   #stepSug.open{display:block}
@@ -566,7 +578,7 @@
       <circle class="mark-dot" cx="17" cy="17" r="2.2"/>
     </svg>
     <span class="logo-text"><span class="logo-now">Now</span><span class="logo-cap">Captures</span></span>
-    <span class="ver">v4.13.0 · 2-min clips</span>
+    <span class="ver">v4.17.0 · 2-min clips</span>
   </div>
   <div class="doc-title-wrap"><label for="docTitle">Report</label><input id="docTitle" value="Test Evidence Report" spellcheck="false" /></div>
   <div class="save-state" id="saveState"><span class="pip"></span><span id="saveText">Saved</span></div>
@@ -627,7 +639,8 @@
   </div>
 
   <div class="toolbar">
-    <div class="grp">
+    <div class="tb-row">
+      <span class="tb-label">Capture</span>
       <button class="btn accent" id="btnRegion" title="Capture a screen, then drag to crop a region">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/></svg>
         Capture region
@@ -649,46 +662,69 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
         Record clip
       </button>
+      <span class="spacer" style="flex:1"></span>
+      <button class="btn icon-only" id="kbdBtn" title="Keyboard shortcuts" aria-label="Keyboard shortcuts">?</button>
     </div>
-    <div class="spacer"></div>
-    <button class="btn" id="btnReset" disabled title="Clear all screenshots and saved data">Reset</button>
-    <button class="btn sel-toggle" id="btnSelectAll" disabled title="Select every screenshot for batch copy/move to test cases">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      Select all
-    </button>
-    <span class="search-wrap" id="searchWrap" title="Filter shots by text in step, description, expected, actual, or bug ID">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input id="searchInput" placeholder="Filter shots..." autocomplete="off" />
-      <button class="search-clear" id="searchClear" title="Clear filter">×</button>
-    </span>
-    <button id="kbdBtn" title="Keyboard shortcuts">?</button>
-    <span class="filter-wrap" title="Limit which screenshots are included in the next Word/PDF export by status">
-      Include:
-      <select id="exportFilter">
-        <option value="all">All shots</option>
-        <option value="fail">Only Failed</option>
-        <option value="fail_blocked">Failed + Blocked</option>
-        <option value="pass">Only Passed</option>
-        <option value="untested">Only Untested</option>
-      </select>
-    </span>
-    <button class="btn" id="btnExportPdf" disabled>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-      Export PDF
-    </button>
-    <button class="btn accent" id="btnExport" disabled>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>
-      Export Word (.docx)
-    </button>
-    <button class="btn" id="btnSessionExport" disabled title="Save this session as a .ncap.json file to share with another tester. Only cases ticked Include are exported; Ungrouped shots always travel with the session.">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-      Export session
-    </button>
-    <button class="btn" id="btnSessionImport" title="Load a session .ncap.json exported by another tester">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-      Import session
-    </button>
-    <input type="file" id="sessionFileInput" accept=".json,.ncap.json,application/json" style="display:none" />
+
+    <div class="tb-row">
+      <span class="tb-label">Review</span>
+      <button class="btn sel-toggle" id="btnSelectAll" disabled title="Select every screenshot for batch copy/move to test cases">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Select all
+      </button>
+      <span class="search-wrap" id="searchWrap" title="Filter shots by text in step, description, expected, actual, or bug ID">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchInput" placeholder="Filter shots..." autocomplete="off" />
+        <button class="search-clear" id="searchClear" title="Clear filter">×</button>
+      </span>
+      <span class="filter-wrap" title="Limit which screenshots are included in the next Word/PDF export by status">
+        Include:
+        <select id="exportFilter">
+          <option value="all">All shots</option>
+          <option value="fail">Only Failed</option>
+          <option value="fail_blocked">Failed + Blocked</option>
+          <option value="pass">Only Passed</option>
+          <option value="untested">Only Untested</option>
+        </select>
+      </span>
+    </div>
+
+    <div class="tb-row">
+      <span class="tb-label">Export</span>
+      <span class="doc-type">
+        <label for="docTypeSel">Document</label>
+        <select id="docTypeSel" title="Test proof keeps steps, results, timestamps and metadata. General is screenshots with their titles only.">
+          <option value="proof">Test proof</option>
+          <option value="general">General</option>
+        </select>
+      </span>
+      <button class="btn accent" id="btnExport" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>
+        Export Word (.docx)
+      </button>
+      <button class="btn" id="btnExportPdf" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Export PDF
+      </button>
+    </div>
+
+    <div class="tb-row">
+      <span class="tb-label">Session</span>
+      <button class="btn" id="btnSessionExport" disabled title="Save this session as a .ncap.json file to share with another tester. Only cases ticked Include are exported; Ungrouped shots always travel with the session.">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Save session
+      </button>
+      <button class="btn" id="btnSessionImport" title="Load a session .ncap.json exported by another tester">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Load session
+      </button>
+      <input type="file" id="sessionFileInput" accept=".json,.ncap.json,application/json" style="display:none" />
+      <span class="spacer" style="flex:1"></span>
+      <button class="btn danger" id="btnReset" disabled title="Clear all screenshots and saved data">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+        Reset
+      </button>
+    </div>
   </div>
 
   <div class="summary" id="summary"></div>
@@ -934,6 +970,7 @@
     approver: "",
     notes: "",
     reportFormat: "standard",   // "standard" | "compliance"
+    docType: "proof",           // "proof" = full test evidence | "general" = screenshots + titles only
     metaCollapsed: true
   };
   // Auto-detected: browser + OS from userAgent
@@ -1107,6 +1144,27 @@
   let shareStream=null, shareVideo=null, shareTrack=null;
   let lastFrameCanvas=null;   // snapshot kept so we can survive a brief track-end
   function logShare(msg){ try{ console.log("[capture]", msg); }catch(_){} }
+  async function settleVideoSize(video, maxMs){
+    const deadline = Date.now() + (maxMs || 1200);
+    let lastW = -1, lastH = -1, stable = 0;
+    while(Date.now() < deadline){
+      await new Promise(r=>setTimeout(r, 90));
+      const w = video.videoWidth, h = video.videoHeight;
+      if(w && h && w === lastW && h === lastH){ if(++stable >= 2) break; }
+      else stable = 0;
+      lastW = w; lastH = h;
+    }
+    return { w: video.videoWidth, h: video.videoHeight };
+  }
+  // "monitor" = a whole screen, "window" = one app window, "browser" = one tab.
+  function sharedSurface(){
+    try{ const st = shareTrack && shareTrack.getSettings ? shareTrack.getSettings() : null;
+         return (st && st.displaySurface) || null; }catch(_){ return null; }
+  }
+  function surfaceWord(sfc){
+    return sfc==="monitor" ? "a whole screen" : sfc==="window" ? "a single window"
+         : sfc==="browser" ? "a single browser tab" : "the shared surface";
+  }
   function shareActive(){
     const ok = !!(shareStream && shareTrack && shareTrack.readyState==="live" && shareVideo && shareVideo.videoWidth>0);
     return ok;
@@ -1119,7 +1177,29 @@
     if(shareActive()){ logShare("reusing existing stream — no prompt"); return shareVideo; }
     logShare("opening share picker (no live stream)");
     let stream;
-    try{ stream=await navigator.mediaDevices.getDisplayMedia({ video:{frameRate:8}, audio:false, surfaceSwitching:"include", selfBrowserSurface:"exclude", monitorTypeSurfaces:"include" }); }
+    // Without width/height the browser picks its own default, which on a scaled or
+    // high-DPI display is the logical resolution rather than the real pixels.
+    // Ask for the physical size; these are "ideal" so a surface that cannot meet
+    // them still succeeds rather than failing outright.
+    const dpr = window.devicePixelRatio || 1;
+    const wantW = Math.round((screen.width  || 1920) * dpr);
+    const wantH = Math.round((screen.height || 1080) * dpr);
+    // By default Chrome brings the captured surface to the front once sharing
+    // starts, which drops the tester on the app they just shared instead of on
+    // the crop screen. Ask it to leave focus alone. Not supported everywhere,
+    // so it is entirely optional.
+    let controller = null;
+    try{
+      if(typeof CaptureController === "function"){
+        controller = new CaptureController();
+        controller.setFocusBehavior("no-focus-change");
+      }
+    }catch(_){ controller = null; }
+    const dmOpts = {
+      video:{ frameRate:8, width:{ideal:wantW}, height:{ideal:wantH} },
+      audio:false, surfaceSwitching:"include", selfBrowserSurface:"exclude", monitorTypeSurfaces:"include" };
+    if(controller) dmOpts.controller = controller;
+    try{ stream=await navigator.mediaDevices.getDisplayMedia(dmOpts); }
     catch(e){
       if(e&&e.name==="NotAllowedError"){ toast("Capture cancelled (or permission denied by the browser).","err"); return null; }
       toast("Couldn't start capture: "+(e.message||e.name||"unknown error"),"err"); return null;
@@ -1128,7 +1208,10 @@
     video.srcObject=stream; video.muted=true; video.setAttribute("playsinline","");
     liveVideosHost().appendChild(video);
     try{ await video.play(); }catch(_){}
-    await new Promise(r=>setTimeout(r,180));
+    // Chrome can report a smaller size for the first frames and grow it a moment
+    // later. A flat wait sometimes read that early value and captured at the
+    // wrong size, so poll until the reported dimensions stop changing.
+    await settleVideoSize(video);
     if(!video.videoWidth||!video.videoHeight){ try{ stream.getTracks().forEach(t=>t.stop()); }catch(_){} video.remove(); toast("Capture returned an empty frame — try again.","err"); return null; }
     shareStream=stream; shareVideo=video; shareTrack=track;
     logShare("share started: "+(track.label||"unknown source"));
@@ -1172,7 +1255,10 @@
     const el=shareStatusEl();
     if(shareActive()){
       el.className="show";
-      el.innerHTML=`<span class="ss-dot"></span><span class="ss-text">Sharing your screen — captures won't ask again.</span><span class="ss-sp"></span><button class="ss-btn" data-ss="change">Change screen</button><button class="ss-btn stop" data-ss="stop">Stop sharing</button>`;
+      const _sfc=sharedSurface();
+      const _dims=(shareVideo&&shareVideo.videoWidth)?` \u00b7 ${shareVideo.videoWidth}\u00d7${shareVideo.videoHeight}`:"";
+      const _what=_sfc==="monitor"?"a whole screen":_sfc==="window"?"a single window":_sfc==="browser"?"one browser tab":"your screen";
+      el.innerHTML=`<span class="ss-dot"></span><span class="ss-text">Sharing ${_what}${_dims} — captures won't ask again.</span><span class="ss-sp"></span><button class="ss-btn" data-ss="change">Change screen</button><button class="ss-btn stop" data-ss="stop">Stop sharing</button>`;
     } else if(lastFrameCanvas){
       // track ended but we had been sharing — offer one-click resume
       el.className="show resume";
@@ -1189,11 +1275,46 @@
     if(!w||!h){ toast("Capture returned an empty frame — try again.","err"); return null; }
     const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
     ctx2d(canvas).drawImage(video,0,0,w,h);
+    logShare(`frame ${w}\u00d7${h} from ${sharedSurface()||"unknown surface"} (display ${screen.width}\u00d7${screen.height} @dpr ${window.devicePixelRatio||1})`);
     lastFrameCanvas=canvas;   // remember in case Chrome ends the track right after
     return {canvas,w,h};
   }
-  async function captureFull(){ const f=await grabFrame(); if(!f) return; addShot(f.canvas.toDataURL("image/png")); toast(`Full screen captured \u2192 ${captureTargetLabel()}`,"ok"); }
-  async function captureRegion(){ const f=await grabFrame(); if(!f) return; openCropper(f.canvas,f.w,f.h); }
+  /* The share is reused so the browser doesn't re-prompt on every capture. That
+     is good for Capture region, but it means Capture full screen was silently
+     grabbing whatever was shared — if you first shared one window, you got that
+     window, not your monitor. Detect the mismatch and offer to re-pick. */
+  async function captureFull(){
+    if(shareActive()){
+      const sfc = sharedSurface();
+      if(sfc && sfc !== "monitor"){
+        const again = confirm(
+          `You're currently sharing ${surfaceWord(sfc)}, not a whole screen, so this would capture only that.\n\n` +
+          `Pick a screen instead? (Choose "Entire Screen" in the picker.)\n\n` +
+          `Cancel to capture ${surfaceWord(sfc)} as it is.`);
+        if(again){ stopSharing(); }
+      }
+    }
+    const f=await grabFrame(); if(!f) return;
+    addShot(f.canvas.toDataURL("image/png"));
+    const sfc = sharedSurface();
+    const size = `${f.w}\u00d7${f.h}`;
+    const expected = Math.round((screen.width||0) * (window.devicePixelRatio||1));
+    // If the capture is far narrower than the display, say so rather than letting
+    // the tester discover it later in the exported document.
+    const small = sfc === "monitor" && expected && f.w < expected * 0.75;
+    toast(
+      small
+        ? `Captured ${size} \u2014 smaller than your ${expected}px display. Check the browser's capture quality settings.`
+        : `${sfc === "monitor" ? "Full screen" : "Shared " + surfaceWord(sfc).replace("a ","")} captured (${size}) \u2192 ${captureTargetLabel()}`,
+      small ? "err" : "ok");
+  }
+  async function captureRegion(){
+    const f=await grabFrame(); if(!f) return;
+    // If the browser moved focus to the shared surface anyway, come back here —
+    // otherwise the crop screen opens behind whatever the tester just shared.
+    try{ window.focus(); }catch(_){}
+    openCropper(f.canvas,f.w,f.h);
+  }
 
   /* ====== live capture session (continuous · draggable · multi-monitor) ====== */
   const liveBtn=$("#btnLive");
@@ -2404,7 +2525,14 @@
   function openCropper(canvas,w,h){
     srcCanvas=canvas; const maxW=window.innerWidth-28,maxH=window.innerHeight-120;
     scale=Math.min(maxW/w,maxH/h,1); cropCanvas.width=Math.round(w*scale); cropCanvas.height=Math.round(h*scale);
-    sel=null; dragging=false; drawCrop(); cropper.classList.add("open"); cropLabel.innerHTML="Drag to select a region. <b>Release</b> to capture.";
+    sel=null; dragging=false; drawCrop(); cropper.classList.add("open");
+    cropLabel.innerHTML="Drag to select a region. <b>Release</b> to capture.";
+    // Focus the overlay so Escape and the scroll position are right immediately,
+    // without the tester having to click into the page first.
+    try{
+      if(!cropper.hasAttribute("tabindex")) cropper.setAttribute("tabindex","-1");
+      cropper.focus({preventScroll:true});
+    }catch(_){}
   }
   function drawCrop(){
     const ctx=cropCtx,W=cropCanvas.width,H=cropCanvas.height; ctx.clearRect(0,0,W,H); ctx.drawImage(srcCanvas,0,0,W,H);
@@ -3057,6 +3185,7 @@
     bind("#metaProtocol","protocol");
     bind("#metaApprover","approver");
     bind("#metaNotes","notes");
+    $("#docTypeSel").value = meta.docType === "general" ? "general" : "proof";
     const panel = $("#metaPanel");
     const toggle = $("#mpToggle");
     if(meta.metaCollapsed) panel.classList.add("collapsed"); else panel.classList.remove("collapsed");
@@ -4183,6 +4312,13 @@
     setCaptureTarget(e.target.value==="" ? null : +e.target.value);
     toast(`New shots go to "${captureTargetLabel()}"`, "ok");
   });
+  $("#docTypeSel").addEventListener("change", e=>{
+    meta.docType = e.target.value === "general" ? "general" : "proof";
+    scheduleSave();
+    toast(meta.docType==="general"
+      ? "General document \u2014 exports will show screenshots and their titles only"
+      : "Test proof \u2014 exports will include steps, results and metadata","ok");
+  });
   $("#docTitle").addEventListener("input",scheduleSave);
 
   /* ====== upload ====== */
@@ -4730,6 +4866,7 @@
     Object.entries(inputMap).forEach(([k, sel])=>{
       const el = $(sel); if(el) el.value = meta[k] || "";
     });
+    $("#docTypeSel").value = meta.docType === "general" ? "general" : "proof";
     if(typeof updateMetaSummary === "function") updateMetaSummary();
     closeImportModal();
     render(); scheduleSave();
@@ -4789,6 +4926,40 @@
      Used by the global "Export Word" button (all groups) AND per-case download
      (single-group). When showBreakdownTable is true (global only) we include the
      "By test case" summary table; per-case exports skip it. */
+  function isGeneralDoc(){ return meta.docType === "general"; }
+
+  /* Which screenshots a general document covers. Unlike the test-proof report,
+     there are no case sections, so Ungrouped shots are included too — otherwise
+     a user who never created a test case would export an empty document.
+     Cases explicitly ticked "Excluded" are still honoured. */
+  function generalShotsForExport(){
+    const excluded = new Set(cases.filter(c=>c.excluded).map(c=>c.id));
+    let list = shots.filter(s => s.caseId==null || !excluded.has(s.caseId));
+    return filterShotsByStatus(list);
+  }
+
+  /* General Word document: title page, then each screenshot with its title.
+     No status, timestamps, descriptions, metadata table or case headings. */
+  async function buildWordGeneral(items, title){
+    const D=window.docx, MAX_W=600;
+    const children=[];
+    children.push(new D.Paragraph({ text:title, heading:D.HeadingLevel.TITLE }));
+    // Kept even here: a document containing masked images should say so.
+    const red = items.filter(s=>s.redactions);
+    if(red.length){
+      children.push(new D.Paragraph({ spacing:{after:200}, children:[ new D.TextRun({
+        text:`Note: ${red.length} of ${items.length} image(s) contain masked regions. The covered content was permanently removed and cannot be recovered from this document.`,
+        italics:true, color:"6B6557", size:20 }) ] }));
+    }
+    for(const s of items){
+      const dim=await imgDims(s.dataUrl), w=Math.min(MAX_W,dim.w), h=Math.round(dim.h*(w/dim.w));
+      const t=(s.step||"").trim();
+      if(t) children.push(new D.Paragraph({ heading:D.HeadingLevel.HEADING_2, spacing:{before:240,after:60}, children:[ new D.TextRun({ text:t }) ] }));
+      children.push(new D.Paragraph({ spacing:{after:120}, children:[ new D.ImageRun({ data:dataUrlToUint8(s.dataUrl), transformation:{width:w,height:h} }) ] }));
+    }
+    return D.Packer.toBlob(new D.Document({ sections:[{ properties:{}, children }] }));
+  }
+
   async function buildWordBlob(groupsToInclude, title, showBreakdownTable){
     const D=window.docx, MAX_W=600;
     const allShots=[]; groupsToInclude.forEach(g=>g.items.forEach(s=>allShots.push(s)));
@@ -4930,6 +5101,16 @@
       await ensureExportLibsReady(false);
       const baseTitle=$("#docTitle").value.trim()||"Test Evidence Report";
       const fl=filterLabel(); const title = fl ? `${baseTitle} (${fl})` : baseTitle;
+      if(isGeneralDoc()){
+        const items=generalShotsForExport();
+        if(!items.length) throw new Error(fl
+          ? `No screenshots match the filter "${fl}".`
+          : "No screenshots to export \u2014 every test case is excluded.");
+        const blob=await buildWordGeneral(items, title);
+        saveAs(blob, `${safeFileName(baseTitle)+(fl?"_"+safeFileName(fl):"")}.docx`);
+        toast(`General document downloaded (${items.length} screenshot${items.length===1?"":"s"})`,"ok");
+        return;
+      }
       let groupsForExport=buildGroups().filter(g => g.id!=null && !g.excluded);
       groupsForExport=applyStatusFilterToGroups(groupsForExport);
       const totalShots=groupsForExport.reduce((n,g)=>n+g.items.length,0);
@@ -4950,6 +5131,42 @@
     }catch(err){ console.error(err); toast("Export failed: "+(err.message||err),"err"); }
     finally{ exportBtn.innerHTML=prev; exportBtn.disabled=shots.length===0; }
   });
+
+  /* General PDF: title page, then each screenshot with its title. */
+  async function buildPdfGeneral(items, title){
+    const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+    const doc=await PDFDocument.create();
+    const font=await doc.embedFont(StandardFonts.Helvetica);
+    const bold=await doc.embedFont(StandardFonts.HelveticaBold);
+    const ital=await doc.embedFont(StandardFonts.HelveticaOblique);
+    const PAGE_W=595, PAGE_H=842, M=50, CONTENT_W=PAGE_W-M*2;
+    const hex=h=>rgb(parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255);
+    const INK=hex("14213D"), MUTED=hex("6B6557");
+    let page=doc.addPage([PAGE_W,PAGE_H]); let y=PAGE_H-M;
+    function ensure(space){ if(y-space < M){ page=doc.addPage([PAGE_W,PAGE_H]); y=PAGE_H-M; } }
+    function wrap(text,f,size,maxW){ const out=[]; text.split(/\n/).forEach(par=>{ const words=par.split(/\s+/); let cur=""; for(const w of words){ const t=cur?cur+" "+w:w; if(f.widthOfTextAtSize(t,size)>maxW && cur){ out.push(cur); cur=w; } else cur=t; } out.push(cur); }); return out; }
+    function drawText(text,f,size,color,maxW,gap){
+      wrap(text,f,size,maxW).forEach(line=>{ ensure(size+4); page.drawText(line,{x:M,y:y-size,size,font:f,color}); y-=size+3; });
+      y-=(gap||0);
+    }
+    drawText(title, bold, 22, INK, CONTENT_W, 8);
+    const red = items.filter(s=>s.redactions);
+    if(red.length){
+      drawText(`Note: ${red.length} of ${items.length} image(s) contain masked regions. The covered content was permanently removed and cannot be recovered from this document.`, ital, 9, MUTED, CONTENT_W, 6);
+    }
+    y-=10;
+    for(const s of items){
+      const t=(s.step||"").trim();
+      const dim=await imgDims(s.dataUrl);
+      const iw=Math.min(CONTENT_W,dim.w), ih=Math.round(dim.h*(iw/dim.w));
+      // Keep a title with its image rather than letting the page break between them.
+      ensure(ih + (t?22:0) + 16);
+      if(t) drawText(t, bold, 13, INK, CONTENT_W, 4);
+      const png=await doc.embedPng(s.dataUrl);
+      ensure(ih+10); page.drawImage(png,{x:M,y:y-ih,width:iw,height:ih}); y-=ih+18;
+    }
+    return doc.save();
+  }
 
   /* Shared PDF builder — bytes from any list of groups. */
   async function buildPdfBytes(groupsToInclude, title){
@@ -5072,6 +5289,16 @@
       await ensureExportLibsReady(true);
       const baseTitle=$("#docTitle").value.trim()||"Test Evidence Report";
       const fl=filterLabel(); const title = fl ? `${baseTitle} (${fl})` : baseTitle;
+      if(isGeneralDoc()){
+        const items=generalShotsForExport();
+        if(!items.length) throw new Error(fl
+          ? `No screenshots match the filter "${fl}".`
+          : "No screenshots to export \u2014 every test case is excluded.");
+        const bytes=await buildPdfGeneral(items, title);
+        saveAs(new Blob([bytes],{type:"application/pdf"}), `${safeFileName(baseTitle)+(fl?"_"+safeFileName(fl):"")}.pdf`);
+        toast(`General document downloaded (${items.length} screenshot${items.length===1?"":"s"})`,"ok");
+        return;
+      }
       let groupsForExport=buildGroups().filter(g => g.id!=null && !g.excluded);
       groupsForExport=applyStatusFilterToGroups(groupsForExport);
       const totalShots=groupsForExport.reduce((n,g)=>n+g.items.length,0);
